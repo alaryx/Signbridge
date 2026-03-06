@@ -10,7 +10,14 @@ const Home = () => {
                 <div className="absolute -bottom-40 left-1/2 w-96 h-96 bg-cyan-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
             </div>
 
-            <div className="max-w-3xl text-center space-y-8 z-10">
+            <div className="max-w-3xl text-center flex flex-col items-center space-y-8 z-10">
+                <div className="flex justify-center mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <img
+                        src="/logos/aksha_logo_nobg.png"
+                        alt="Aksha Logo"
+                        className="h-32 md:h-48 w-auto object-contain drop-shadow-xl transform hover:scale-105 transition-transform duration-300"
+                    />
+                </div>
                 <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-gray-900 drop-shadow-sm">
                     Welcome to <span className="bg-gradient-to-r from-teal-600 to-emerald-500 bg-clip-text text-transparent">SignBridge</span>
                 </h1>

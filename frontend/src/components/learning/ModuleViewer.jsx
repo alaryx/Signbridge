@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft, PlayCircle, ShieldAlert, CheckCircle } from 'lucide-react';
 
-const ModuleViewer = ({ moduleData, onBack, onStartLesson, onStartQuiz }) => {
+const ModuleViewer = ({ moduleData, completedLessonIds = [], onBack, onStartLesson, onStartQuiz }) => {
     if (!moduleData) return null;
 
     return (
@@ -34,26 +34,31 @@ const ModuleViewer = ({ moduleData, onBack, onStartLesson, onStartQuiz }) => {
 
                 {moduleData.lessons?.map((lesson, index) => (
                     <div
-                        key={lesson.id}
+                        key={lesson._id || lesson.id}
                         onClick={() => onStartLesson(lesson)}
                         className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:border-teal-300 hover:shadow-md transition-all group"
                     >
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 group-hover:scale-110 group-hover:bg-teal-100 transition-all">
+                            <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 group-hover:scale-110 group-hover:bg-teal-100 transition-all shadow-sm">
                                 <PlayCircle size={24} />
                             </div>
                             <div>
                                 <h3 className="font-bold text-gray-900 group-hover:text-teal-700 transition-colors">
                                     {index + 1}. {lesson.title}
                                 </h3>
-                                <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
+                                <p className="text-sm text-gray-500 flex items-center gap-2 mt-1 font-medium">
                                     <span>{lesson.type.replace('_', ' / ').toUpperCase()}</span>
                                     <span>•</span>
                                     <span>{lesson.duration || '3 min'}</span>
                                 </p>
                             </div>
                         </div>
-                        <div className="w-8 h-8 rounded-full border-2 border-gray-200"></div> {/* Checkbox placeholder */}
+                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${completedLessonIds.includes(lesson._id || lesson.id)
+                            ? 'bg-green-500 border-green-500 text-white shadow-sm scale-110'
+                            : 'border-gray-200 bg-gray-50'
+                            }`}>
+                            {completedLessonIds.includes(lesson._id || lesson.id) && <CheckCircle size={18} strokeWidth={3} />}
+                        </div>
                     </div>
                 ))}
             </div>

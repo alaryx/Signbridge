@@ -7,11 +7,9 @@ const AssessmentFlow = ({ onComplete }) => {
     const [currentQuestionId, setCurrentQuestionId] = useState('Q1');
     const [stepCount, setStepCount] = useState(1);
 
-    // Total steps is dynamic in an adaptive flow, we'll estimate it relative to an average path length
-    const estimatedTotalSteps = 8;
+    // Total steps is now fixed to 4 based on the simplified linear mockQuestions
+    const estimatedTotalSteps = 4;
 
-    // Keep track of the highest level reached for logic processing on 'finish'
-    const [highestLevelCategory, setHighestLevelCategory] = useState("Context");
     const [answersLog, setAnswersLog] = useState([]);
 
     const handleAnswer = (selectedOption) => {
@@ -20,24 +18,16 @@ const AssessmentFlow = ({ onComplete }) => {
         // Log answers (useful for eventually generating personalized paths)
         setAnswersLog([...answersLog, { qId: currentQuestionId, selected: selectedOption }]);
 
-        if (currentQ.category !== 'Context' && currentQ.category !== 'Self-Assessment') {
-            setHighestLevelCategory(currentQ.category);
-        }
-
         const nextId = selectedOption.nextId;
 
         // Check if we hit an early "finish" based on evaluation failure
         if (nextId === 'finish') {
-            const finalLevel = generateFinalPlacement(
-                currentQ.category,
-                selectedOption.evaluateFlow,
-                currentQ.failPlacement
-            );
+            const finalLevel = generateFinalPlacement();
 
             // Finish Assessment
             onComplete({
                 level: finalLevel,
-                path: ['Module 1: Foundations', 'Module 2: Daily Life', 'Module 3: Practice'] // Mocked path
+                path: ['Module 1: Greetings', 'Module 2: Food', 'Module 3: Basics'] // Mocked path
             });
             return;
         }
@@ -49,7 +39,7 @@ const AssessmentFlow = ({ onComplete }) => {
         } else {
             // Fallback finish if nextId is invalid or unexpectedly missing
             window.console.error("Missing question ID:", nextId);
-            onComplete({ level: highestLevelCategory || 'Beginner', path: [] });
+            onComplete({ level: 'Level 1', path: [] });
         }
     };
 

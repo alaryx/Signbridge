@@ -1,8 +1,25 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, LogIn, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Auth = () => {
     const [isLogin, setIsLogin] = useState(true);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
+    const navigate = useNavigate();
+    const { login } = useAuth();
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        // Basic validation and mock login
+        if (email && password) {
+            login({ email, name: isLogin ? 'User' : name });
+            navigate('/learn'); // Redirect to learn dashboard on successful login
+        }
+    };
 
     return (
         <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -27,7 +44,7 @@ const Auth = () => {
                     </p>
                 </div>
 
-                <form className="mt-8 space-y-6" onSubmit={(e) => e.preventDefault()}>
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-4">
                         {!isLogin && (
                             <div className="relative">
@@ -35,6 +52,8 @@ const Auth = () => {
                                     <User className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <input type="text" required
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
                                     className="appearance-none rounded-xl relative block w-full pl-10 px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-teal-500 focus:border-teal-500 focus:z-10 sm:text-sm transition-colors"
                                     placeholder="Full Name"
                                 />
@@ -45,6 +64,8 @@ const Auth = () => {
                                 <Mail className="h-5 w-5 text-gray-400" />
                             </div>
                             <input type="email" required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="appearance-none rounded-xl relative block w-full pl-10 px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-teal-500 focus:border-teal-500 focus:z-10 sm:text-sm transition-colors"
                                 placeholder="Email address"
                             />
@@ -54,6 +75,8 @@ const Auth = () => {
                                 <Lock className="h-5 w-5 text-gray-400" />
                             </div>
                             <input type="password" required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 className="appearance-none rounded-xl relative block w-full pl-10 px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-teal-500 focus:border-teal-500 focus:z-10 sm:text-sm transition-colors"
                                 placeholder="Password"
                             />

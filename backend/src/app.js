@@ -11,6 +11,7 @@ app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/translate', require('./routes/translate.routes'));
 app.use('/api/learning', require('./routes/learning.routes'));
 app.use('/api/session', require('./routes/session.routes'));
+app.use('/api/admin', require('./routes/admin.routes'));
 
 // Basic Error Handling Middleware
 app.use((err, req, res, next) => {
