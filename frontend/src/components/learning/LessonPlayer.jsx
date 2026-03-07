@@ -85,6 +85,7 @@ const LessonPlayer = ({ lesson, onBack, onComplete }) => {
                             src={lesson.mediaUrl}
                             controls
                             autoPlay
+                            muted
                             className="w-full max-h-[600px] object-contain bg-black shadow-2xl"
                             crossOrigin="anonymous"
                         />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Check, Lock } from 'lucide-react';
+import { Play, Check, Lock, Trophy } from 'lucide-react';
 
 const LevelNode = ({ lesson, index, status, onClick }) => {
     // Generate a curved path offset using Math.sin
@@ -41,7 +41,7 @@ const LevelNode = ({ lesson, index, status, onClick }) => {
 
     return (
         <div
-            className="relative flex flex-col items-center justify-center my-6 group"
+            className="relative flex flex-col items-center justify-center my-6 group z-10"
             style={{
                 transform: `translateX(${offset}px)`
             }}
@@ -69,7 +69,7 @@ const LevelNode = ({ lesson, index, status, onClick }) => {
     );
 };
 
-const LearningPath = ({ curriculum, userProgress, onLessonSelect }) => {
+const LearningPath = ({ curriculum, userProgress, onLessonSelect, onTestSelect }) => {
     // Flatten the curriculum into a distinct linear path of lessons across modules
     // In a real Duolingo app, chapters group lessons together.
 
@@ -77,6 +77,30 @@ const LearningPath = ({ curriculum, userProgress, onLessonSelect }) => {
 
     const completedIds = userProgress?.completedLessons || [];
     let isFirstLockedFound = false;
+
+    // We calculate a fixed distance between nodes to draw the SVG correctly.
+    // The nodes have margin-y of 6 (which is 24px top and bottom, plus 64px height)
+    // Roughly 112px per node
+    const nodeSpacing = 112;
+
+    // Function to generate SVG Path logic for the curved snake line
+    const generatePathData = (nodeCount) => {
+        let path = '';
+        for (let i = 0; i < nodeCount; i++) {
+            const startY = i * nodeSpacing;
+            const endY = (i + 1) * nodeSpacing;
+            const startX = Math.sin(i * 0.5) * 60;
+            const endX = Math.sin((i + 1) * 0.5) * 60;
+
+            if (i === 0) {
+                path += `M ${startX + 100} 0 `; // 100 is the center offset for viewBox 200
+            }
+
+            // Draw a bezier curve connecting this node to the next
+            path += `C ${startX + 100} ${startY + 50}, ${endX + 100} ${endY - 50}, ${endX + 100} ${endY} `;
+        }
+        return path;
+    };
 
     return (
         <div className="max-w-xl mx-auto py-12 px-4 flex flex-col items-center">
@@ -99,47 +123,141 @@ const LearningPath = ({ curriculum, userProgress, onLessonSelect }) => {
                     </div>
 
                     {/* Modules & Lessons */}
-                    {course.modules.map((mod, mIdx) => (
-                        <div key={mod._id} className="w-full flex flex-col items-center relative">
+                    {course.modules.map((mod, mIdx) => {
+                        const hasTest = !!mod.quiz;
+                        const lessonCount = mod.lessons.length;
+                        // Determine how many nodes we have total in this module block
+                        const totalNodes = hasTest ? lessonCount + 1 : lessonCount;
+                        const pathSegments = totalNodes - 1; // Connectors are N-1
 
-                            {/* Module Name floating marker */}
-                            <div className="bg-white px-4 py-2 rounded-full border-2 border-gray-200 font-bold text-gray-600 text-sm mb-6 z-10 shadow-sm">
-                                {mod.title}
+                        const svgHeight = pathSegments * nodeSpacing;
+                        const pathData = generatePathData(pathSegments);
+
+                        // Determine how many lessons in THIS module are completed
+                        let moduleCompletedCount = 0;
+                        let hasActive = false;
+
+                        mod.lessons.forEach((l) => {
+                            if (completedIds.includes(l._id)) {
+                                moduleCompletedCount++;
+                            } else if (!isFirstLockedFound) {
+                                hasActive = true;
+                            }
+                        });
+
+                        // For the Test Slab:
+                        // Module is "finished" if all lessons are complete
+                        const allLessonsComplete = moduleCompletedCount === lessonCount;
+
+                        // If all lessons are complete, but no test has been taken? We treat the test slab as active/completed.
+                        // We'll increment the completed node count conceptually to render the colored path down to the test slab.
+                        let nodesToConnectColored = moduleCompletedCount;
+
+                        if (allLessonsComplete && hasTest) {
+                            nodesToConnectColored = lessonCount; // Color the path all the way from the last lesson down to the test slab
+                        } else if (!hasActive && moduleCompletedCount > 0) {
+                            nodesToConnectColored = moduleCompletedCount - 1;
+                        }
+
+                        // Calculate active path length
+                        let activePathData = '';
+                        if (nodesToConnectColored > 0) {
+                            activePathData = generatePathData(nodesToConnectColored);
+                        }
+
+                        return (
+                            <div key={mod._id} className="w-full flex flex-col items-center relative mb-8">
+
+                                {/* Module Name floating marker */}
+                                <div className="bg-white px-4 py-2 rounded-full border-2 border-gray-200 font-bold text-gray-600 text-sm mb-6 z-10 shadow-sm">
+                                    {mod.title}
+                                </div>
+
+                                {/* SVG Connecting Path container */}
+                                <div className="relative flex flex-col items-center w-full pb-8">
+
+                                    {/* SVG Overlay */}
+                                    {lessonCount > 1 && (
+                                        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-0 pointer-events-none" style={{ height: svgHeight, width: '200px' }}>
+                                            <svg width="200" height={svgHeight} viewBox={`0 0 200 ${svgHeight}`} className="drop-shadow-sm overflow-visible">
+                                                {/* Inactive grey path */}
+                                                <path
+                                                    d={pathData}
+                                                    fill="none"
+                                                    stroke="#E5E7EB"
+                                                    strokeWidth="12"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
+                                                {/* Active colored path */}
+                                                {activePathData && (
+                                                    <path
+                                                        d={activePathData}
+                                                        fill="none"
+                                                        stroke="#14B8A6"
+                                                        strokeWidth="12"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        className="drop-shadow-[0_2px_8px_rgba(20,184,166,0.3)]"
+                                                    />
+                                                )}
+                                            </svg>
+                                        </div>
+                                    )}
+                                    {mod.lessons.map((lesson, lIdx) => {
+
+                                        // Determine Status
+                                        let status = 'locked';
+                                        const isCompleted = completedIds.includes(lesson._id);
+
+                                        if (isCompleted) {
+                                            status = 'completed';
+                                        } else if (!isFirstLockedFound) {
+                                            // The very first uncompleted lesson is the 'active' one
+                                            status = 'active';
+                                            isFirstLockedFound = true;
+                                        }
+
+                                        return (
+                                            <LevelNode
+                                                key={lesson._id}
+                                                lesson={lesson}
+                                                index={lIdx}
+                                                status={status}
+                                                onClick={onLessonSelect}
+                                            />
+                                        );
+                                    })}
+
+                                    {/* Test Slab appended dynamically */}
+                                    {hasTest && (
+                                        <div
+                                            className="relative flex flex-col items-center justify-center my-6 group z-10"
+                                            style={{
+                                                transform: `translateX(${Math.sin(lessonCount * 0.5) * 60}px)`
+                                            }}
+                                        >
+                                            <button
+                                                onClick={() => allLessonsComplete && onTestSelect && onTestSelect(mod)}
+                                                className={`
+                                                    min-w-[200px] px-8 py-4 rounded-3xl flex items-center justify-center gap-3 font-black text-lg
+                                                    border-b-[6px] transition-all duration-200 relative
+                                                    ${allLessonsComplete
+                                                        ? 'bg-indigo-600 border-indigo-800 text-white hover:-translate-y-1 hover:border-b-[8px] active:translate-y-2 active:border-b-0 shadow-lg shadow-indigo-600/30'
+                                                        : 'bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed border-b-4'
+                                                    }
+                                                `}
+                                            >
+                                                <Trophy size={24} className={allLessonsComplete ? "fill-white" : ""} />
+                                                <span>Test Module</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
                             </div>
-
-                            {/* SVG Connecting Path - Drawn absolutely behind nodes */}
-                            <div className="absolute top-8 bottom-0 w-1 bg-gray-200 -z-10 rounded-full"></div>
-
-                            {/* Individual Lesson Nodes */}
-                            <div className="flex flex-col items-center w-full pb-8">
-                                {mod.lessons.map((lesson, lIdx) => {
-
-                                    // Determine Status
-                                    let status = 'locked';
-                                    const isCompleted = completedIds.includes(lesson._id);
-
-                                    if (isCompleted) {
-                                        status = 'completed';
-                                    } else if (!isFirstLockedFound) {
-                                        // The very first uncompleted lesson is the 'active' one
-                                        status = 'active';
-                                        isFirstLockedFound = true;
-                                    }
-
-                                    return (
-                                        <LevelNode
-                                            key={lesson._id}
-                                            lesson={lesson}
-                                            index={lIdx}
-                                            status={status}
-                                            onClick={onLessonSelect}
-                                        />
-                                    );
-                                })}
-                            </div>
-
-                        </div>
-                    ))}
+                        );
+                    })}
 
                     {/* Section End Divider */}
                     <div className="w-16 h-1 bg-gray-200 rounded-full mt-8"></div>

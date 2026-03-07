@@ -20,7 +20,37 @@ export const coursePaths = {
                     id: "L1_M1_Q1",
                     title: "Greetings Checkpoint",
                     passingScore: 66,
-                    questions: []
+                    questions: [
+                        {
+                            id: "q1",
+                            type: "text_to_video",
+                            questionText: "Which of these videos represents 'Namaste / Hello'?",
+                            options: [
+                                { id: "opt1", videoUrl: "/learning/level 1/sorry.mp4" },
+                                { id: "opt2", videoUrl: "/learning/level 1/Thank You.mp4" },
+                                { id: "opt3", videoUrl: "/learning/level 1/Namaste.mp4", isCorrect: true },
+                                { id: "opt4", videoUrl: "/learning/level 1/Help.mp4" }
+                            ]
+                        },
+                        {
+                            id: "q2",
+                            type: "video_to_text",
+                            questionText: "What does this sign mean?",
+                            videoUrl: "/learning/level 1/Thank You.mp4",
+                            options: [
+                                { id: "opt1", text: "Food" },
+                                { id: "opt2", text: "Sorry" },
+                                { id: "opt3", text: "Thank You", isCorrect: true },
+                                { id: "opt4", text: "Hello" }
+                            ]
+                        },
+                        {
+                            id: "q3",
+                            type: "action",
+                            questionText: "Now it's your turn. Please sign: 'Sorry'",
+                            targetSign: "sorry"
+                        }
+                    ]
                 }
             },
             {
@@ -37,7 +67,26 @@ export const coursePaths = {
                     id: "L1_M2_Q1",
                     title: "Basic Needs Quiz",
                     passingScore: 70,
-                    questions: []
+                    questions: [
+                        {
+                            id: "q1",
+                            type: "video_to_text",
+                            questionText: "Identify the sign shown in the video:",
+                            videoUrl: "/learning/level 1/food.mp4",
+                            options: [
+                                { id: "opt1", text: "Help" },
+                                { id: "opt2", text: "Water" },
+                                { id: "opt3", text: "Food", isCorrect: true },
+                                { id: "opt4", text: "Please" }
+                            ]
+                        },
+                        {
+                            id: "q2",
+                            type: "action",
+                            questionText: "Demonstrate the sign for: 'Help'",
+                            targetSign: "help"
+                        }
+                    ]
                 }
             }
         ],

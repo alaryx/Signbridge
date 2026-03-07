@@ -6,6 +6,7 @@ import AssessmentResult from '../components/learning/AssessmentResult';
 import LessonPlayer from '../components/learning/LessonPlayer';
 import LearningPath from '../components/learning/LearningPath';
 import DailyGoalHeader from '../components/learning/DailyGoalHeader';
+import ModuleTest from '../components/learning/ModuleTest';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { coursePaths as mockCourses } from '../api/mockCourses';
@@ -22,7 +23,8 @@ const LearnISL = () => {
     );
     const [selectedModule, setSelectedModule] = useState(null);
     const [selectedLesson, setSelectedLesson] = useState(null);
-
+    const [completedModulePopup, setCompletedModulePopup] = useState(null); // The module they just finished
+    const [activeTest, setActiveTest] = useState(null); // The module they are actively testing
 
     // Store assigned level ('Level 1' by default)
     const [userProfile, setUserProfile] = useState({
@@ -67,7 +69,29 @@ const LearnISL = () => {
             const res = await fetch('http://localhost:5000/api/learning/curriculum');
             const data = await res.json();
             if (data.status === 'success' && data.data.length > 0) {
-                setCourses(data.data);
+                // Merge in the quiz data from mockCourses, since the DB doesn't have it yet
+                const mockLevels = Object.values(mockCourses);
+
+                const mergedCourses = data.data.map((course, cIdx) => {
+                    // Try to find the corresponding mock course by index
+                    const mockCourse = mockLevels[cIdx];
+                    if (!mockCourse) return course;
+
+                    return {
+                        ...course,
+                        modules: course.modules.map((mod, mIdx) => {
+                            const mockMod = mockCourse.modules[mIdx];
+                            if (!mockMod || !mockMod.quiz) return mod;
+
+                            return {
+                                ...mod,
+                                quiz: mockMod.quiz
+                            };
+                        })
+                    };
+                });
+
+                setCourses(mergedCourses);
             } else {
                 loadMockFallback();
             }
@@ -133,8 +157,101 @@ const LearnISL = () => {
                 xp: newXp,
                 completedLessons: newCompletedLessons
             });
+
+            // Check if this lesson completed a module
+            // Iterate through courses to find which module this lesson belonged to
+            for (const course of courses) {
+                for (const mod of course.modules) {
+                    const lessonIndex = mod.lessons.findIndex(l => l._id === lessonId || l.id === lessonId);
+                    if (lessonIndex !== -1) {
+                        // Check if all lessons in THIS module are now in newCompletedLessons
+                        const allCompleted = mod.lessons.every(l => newCompletedLessons.includes(l._id || l.id));
+
+                        // If all completed, and it's this specific lesson that triggered it
+                        // Ensure we don't trigger if they replay a lesson in an already completed module
+                        // The outer `if(!includes)` already prevents this from running twice for the same lesson
+                        if (allCompleted) {
+                            setCompletedModulePopup(mod);
+                        }
+                        break;
+                    }
+                }
+            }
         }
         setSelectedLesson(null);
+    };
+
+    const buildCumulativeTest = (targetMod) => {
+        if (!targetMod || !targetMod.quiz || !targetMod.quiz.questions) return targetMod;
+
+        let pastQuestions = [];
+        let foundTarget = false;
+
+        // Iterate chronologically to gather past questions
+        for (const course of courses) {
+            for (const mod of course.modules) {
+                if (mod._id === targetMod._id || mod.id === targetMod.id) {
+                    foundTarget = true;
+                    break;
+                }
+                if (mod.quiz && mod.quiz.questions) {
+                    // Collect all questions from this past module
+                    pastQuestions = pastQuestions.concat(
+                        mod.quiz.questions.map(q => ({ ...q, isFromPast: true }))
+                    );
+                }
+            }
+            if (foundTarget) break;
+        }
+
+        // Randomly select 80% of past questions
+        let selectedPastQuestions = [];
+        if (pastQuestions.length > 0) {
+            // Shuffle
+            const shuffledPast = [...pastQuestions].sort(() => 0.5 - Math.random());
+            const numToSelect = Math.ceil(shuffledPast.length * 0.8);
+            selectedPastQuestions = shuffledPast.slice(0, numToSelect);
+        }
+
+        // Combine current module questions with the selected past questions
+        const combinedQuestions = [
+            ...targetMod.quiz.questions.map(q => ({ ...q, isFromPast: false })),
+            ...selectedPastQuestions
+        ];
+
+        // Shuffle the final combined list
+        const finalShuffled = combinedQuestions.sort(() => 0.5 - Math.random());
+
+        // Return a cloned module with the expanded quiz
+        return {
+            ...targetMod,
+            quiz: {
+                ...targetMod.quiz,
+                questions: finalShuffled,
+                // Optionally adjust passing score or keep the percentage requirement the same
+                // We'll keep the percentage the same, but it now applies to the larger pool
+            }
+        };
+    };
+
+    const handleStartTest = () => {
+        const mod = completedModulePopup;
+        setCompletedModulePopup(null);
+        setActiveTest(buildCumulativeTest(mod));
+    };
+
+    const handleTestPass = (moduleId, score) => {
+        setActiveTest(null);
+
+        const newXp = userProfile.xp + 200; // Bonus for passing
+        // In a real app we'd track completed modules specifically, here we just give XP
+        updateUser({ xp: newXp });
+        setUserProfile(prev => ({ ...prev, xp: newXp }));
+    };
+
+    const handleTestFail = (moduleId, score) => {
+        setActiveTest(null);
+        // They return to dashboard to revise
     };
 
     if (loading || (!loading && !isAuthenticated) || loadingCurriculum) {
@@ -166,7 +283,48 @@ const LearnISL = () => {
 
     // --- DASHBOARD VIEW (State: completed) ---
     return (
-        <div className="bg-gray-50 min-h-screen pb-24">
+        <div className="bg-gray-50 min-h-screen pb-24 relative">
+
+            {/* Module Completion Overlay */}
+            {completedModulePopup && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center animate-in zoom-in-95 fill-mode-both border border-gray-100">
+                        <div className="w-20 h-20 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Trophy size={40} />
+                        </div>
+                        <h2 className="text-3xl font-black text-gray-900 mb-2">Module Complete!</h2>
+                        <p className="text-gray-500 mb-8 px-4 font-medium">
+                            You've finished all lessons in <strong>{completedModulePopup.title}</strong>.
+                        </p>
+
+                        <div className="space-y-3">
+                            <button
+                                onClick={handleStartTest}
+                                className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-teal-600/30 transition-all hover:-translate-y-1 active:translate-y-0"
+                            >
+                                Test Your Knowledge
+                            </button>
+                            <button
+                                onClick={() => setCompletedModulePopup(null)}
+                                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-4 rounded-xl transition-colors"
+                            >
+                                Continue Learning
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Active Test Overlay */}
+            {activeTest && (
+                <ModuleTest
+                    module={activeTest}
+                    onPass={handleTestPass}
+                    onFail={handleTestFail}
+                    onCancel={() => setActiveTest(null)}
+                />
+            )}
+
             <DailyGoalHeader userProgress={userProfile} />
 
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -189,6 +347,7 @@ const LearnISL = () => {
                         curriculum={courses}
                         userProgress={userProfile}
                         onLessonSelect={(lesson) => setSelectedLesson(lesson)}
+                        onTestSelect={(mod) => setActiveTest(buildCumulativeTest(mod))}
                     />
                 )}
             </div>

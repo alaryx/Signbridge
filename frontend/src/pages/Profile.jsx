@@ -1,9 +1,9 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Trophy, Star, BookOpen, Clock, Activity, Settings, Calendar } from 'lucide-react';
+import { User, Mail, Trophy, Star, BookOpen, Clock, Activity, Settings, Calendar, AlertTriangle } from 'lucide-react';
 
 const Profile = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
 
     if (!user) {
         return (
@@ -20,6 +20,18 @@ const Profile = () => {
     const completedLessons = user.completedLessons?.length || 0;
     const translations = user.translations || [];
     const joinedDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : new Date().toLocaleDateString();
+
+    const handleResetProgress = () => {
+        if (window.confirm("Are you sure you want to reset your learning progress? This will reset your XP, level, and completed lessons. This action cannot be undone.")) {
+            updateUser({
+                xp: 0,
+                streak: 0,
+                completedLessons: [],
+                level: 'Level 1',
+                assessmentCompleted: false
+            });
+        }
+    };
 
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -61,6 +73,19 @@ const Profile = () => {
                                         {level}
                                     </span>
                                 </div>
+                            </div>
+
+                            <div className="mt-8 pt-6 border-t border-gray-100">
+                                <button
+                                    onClick={handleResetProgress}
+                                    className="w-full flex items-center justify-center gap-2 text-red-600 bg-red-50 hover:bg-red-100 py-3 px-4 rounded-xl font-bold transition-colors border border-red-100"
+                                >
+                                    <AlertTriangle size={18} />
+                                    Reset Progress
+                                </button>
+                                <p className="text-xs text-center text-gray-400 mt-3 px-2">
+                                    Careful! This will clear your XP and reset you to the start.
+                                </p>
                             </div>
                         </div>
                     </div>
