@@ -11,7 +11,7 @@ const LevelNode = ({ lesson, index, status, onClick }) => {
         switch (status) {
             case 'completed':
                 return {
-                    bg: 'bg-green-500',
+                    bg: 'bg-green-500 hover:bg-green-600',
                     border: 'border-green-600',
                     text: 'text-white',
                     shadow: 'shadow-[0_4px_0_rgb(22,163,74)]',

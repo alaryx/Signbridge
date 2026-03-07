@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import CameraPanel from '../components/translation/CameraPanel';
 import ConversationStream from '../components/translation/ConversationStream';
 import { Camera, Type, ArrowRight } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Translation = () => {
+    const { user, updateUser } = useAuth();
     const [mode, setMode] = useState('sign_to_text'); // 'sign_to_text' | 'text_to_sign'
     const [isCameraActive, setIsCameraActive] = useState(true);
     const [textInput, setTextInput] = useState('');
@@ -24,6 +26,15 @@ const Translation = () => {
             timestamp: new Date().toISOString(),
         };
         setMessages([...messages, newMsg]);
+
+        // Save to user history
+        if (user) {
+            const currentTranslations = user.translations || [];
+            updateUser({
+                translations: [...currentTranslations, { text: textInput, timestamp: new Date().toISOString() }]
+            });
+        }
+
         setTextInput('');
     };
 
@@ -35,8 +46,8 @@ const Translation = () => {
                 <button
                     onClick={() => setMode('sign_to_text')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${mode === 'sign_to_text'
-                            ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/30 scale-105'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/30 scale-105'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                 >
                     <Camera size={18} />
@@ -48,8 +59,8 @@ const Translation = () => {
                 <button
                     onClick={() => setMode('text_to_sign')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${mode === 'text_to_sign'
-                            ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/30 scale-105'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/30 scale-105'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                 >
                     <Type size={18} />

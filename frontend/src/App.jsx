@@ -7,6 +7,7 @@ import LearnISL from './pages/LearnISL';
 import About from './pages/About';
 import Auth from './pages/Auth';
 import AdminDashboard from './pages/AdminDashboard';
+import Profile from './pages/Profile';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navigate } from 'react-router-dom';
 
@@ -35,6 +36,7 @@ function App() {
               <Route path="/learn" element={<LearnISL />} />
               <Route path="/about" element={<About />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={
                 <AdminRoute>
                   <AdminDashboard />

@@ -9,24 +9,46 @@ import DailyGoalHeader from '../components/learning/DailyGoalHeader';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { coursePaths as mockCourses } from '../api/mockCourses';
+import { useEffect } from 'react';
 
 const LearnISL = () => {
+    const { isAuthenticated, loading, user, updateUser } = useAuth();
+    const navigate = useNavigate();
+
     // States: 'pending', 'started', 'result', 'completed'
-    // Defaulting to pending for onboarding
-    const [assessmentState, setAssessmentState] = useState('pending');
+    // Defaulting to pending for onboarding if they haven't completed it
+    const [assessmentState, setAssessmentState] = useState(
+        user?.assessmentCompleted ? 'completed' : 'pending'
+    );
     const [selectedModule, setSelectedModule] = useState(null);
     const [selectedLesson, setSelectedLesson] = useState(null);
-    const { isAuthenticated, loading, user } = useAuth();
-    const navigate = useNavigate();
+
 
     // Store assigned level ('Level 1' by default)
     const [userProfile, setUserProfile] = useState({
-        level: 'Level 1', // We can match this to Course title
-        xp: 0,
-        streak: 0,
+        level: user?.level || 'Level 1',
+        xp: user?.xp || 0,
+        streak: user?.streak || 0,
         name: user?.name || 'Student',
-        completedLessonIds: []
+        completedLessons: user?.completedLessons || []
     });
+
+    useEffect(() => {
+        if (user) {
+            setUserProfile(prev => ({
+                ...prev,
+                level: user.level || prev.level,
+                xp: user.xp || prev.xp,
+                streak: user.streak || prev.streak,
+                name: user.name || prev.name,
+                completedLessons: user.completedLessons || prev.completedLessons
+            }));
+
+            if (user.assessmentCompleted && assessmentState === 'pending') {
+                setAssessmentState('completed');
+            }
+        }
+    }, [user]);
 
     // Live Curriculum State
     const [courses, setCourses] = useState([]);
@@ -74,11 +96,14 @@ const LearnISL = () => {
 
     const handleCompleteAssessment = () => {
         // Always assign Level 1 after the new simplified assessment
-        setUserProfile(prev => ({ ...prev, level: 'Level 1' }));
+        const newProfile = { ...userProfile, level: 'Level 1', assessmentCompleted: true };
+        setUserProfile(newProfile);
+        updateUser({ level: 'Level 1', assessmentCompleted: true });
         setAssessmentState('result');
     };
 
     const handleContinueToDashboard = () => {
+        updateUser({ assessmentCompleted: true });
         setAssessmentState('completed');
     };
 
@@ -93,12 +118,21 @@ const LearnISL = () => {
     };
 
     const handleLessonComplete = (lessonId) => {
-        if (!userProfile.completedLessonIds.includes(lessonId)) {
+        if (!userProfile.completedLessons.includes(lessonId)) {
+            const newXp = userProfile.xp + 50;
+            const newCompletedLessons = [...userProfile.completedLessons, lessonId];
+
             setUserProfile(prev => ({
                 ...prev,
-                xp: prev.xp + 50,
-                completedLessonIds: [...prev.completedLessonIds, lessonId]
+                xp: newXp,
+                completedLessons: newCompletedLessons
             }));
+
+            // Sync to global user state
+            updateUser({
+                xp: newXp,
+                completedLessons: newCompletedLessons
+            });
         }
         setSelectedLesson(null);
     };

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Camera, BookOpen, Home, Info, Mail, LogIn, LogOut, Settings } from 'lucide-react';
+import { Menu, X, Camera, BookOpen, Home, Info, Mail, LogIn, LogOut, Settings, UserCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -19,7 +19,10 @@ const Navbar = () => {
             : []
         ),
         ...(isAuthenticated
-            ? [{ name: 'Logout', path: '#', icon: <LogOut size={20} />, action: logout }]
+            ? [
+                { name: 'Profile', path: '/profile', icon: <UserCircle size={20} /> },
+                { name: 'Logout', path: '#', icon: <LogOut size={20} />, action: logout }
+            ]
             : [{ name: 'Login', path: '/auth', icon: <LogIn size={20} /> }]
         )
     ];
