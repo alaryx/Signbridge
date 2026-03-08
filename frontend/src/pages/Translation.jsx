@@ -6,28 +6,38 @@ import { useAuth } from '../context/AuthContext';
 
 const Translation = () => {
     const { user, updateUser } = useAuth();
-    const [mode, setMode] = useState('sign_to_text'); // 'sign_to_text' | 'text_to_sign'
+    const [mode, setMode] = useState('sign_to_text');
     const [isCameraActive, setIsCameraActive] = useState(true);
     const [textInput, setTextInput] = useState('');
-    const [messages, setMessages] = useState([
-        { id: 1, direction: 'sign_to_text', content: 'Hello', confidence: 0.98, timestamp: new Date(Date.now() - 60000).toISOString() },
-        { id: 2, direction: 'text_to_sign', content: 'Hi! How can I help you?', confidence: 1.0, timestamp: new Date(Date.now() - 30000).toISOString() },
-    ]);
+    const [messages, setMessages] = useState([]);
 
     const toggleCamera = () => setIsCameraActive(!isCameraActive);
+
+    // ✅ Called by CameraPanel when a sign is detected
+    const handleSignDetected = (detections) => {
+        if (!detections || detections.length === 0) return;
+        const top = detections[0]; // highest confidence detection
+        const newMsg = {
+            id: Date.now(),
+            direction: 'sign_to_text',
+            content: top.class,
+            confidence: top.confidence,
+            timestamp: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, newMsg]);
+    };
 
     const handleSendText = () => {
         if (!textInput.trim()) return;
         const newMsg = {
-            id: messages.length + 1,
+            id: Date.now(),
             direction: 'text_to_sign',
             content: textInput,
             confidence: 0.95,
             timestamp: new Date().toISOString(),
         };
-        setMessages([...messages, newMsg]);
+        setMessages(prev => [...prev, newMsg]);
 
-        // Save to user history
         if (user) {
             const currentTranslations = user.translations || [];
             updateUser({
@@ -76,7 +86,12 @@ const Translation = () => {
                     <>
                         {/* Camera Panel */}
                         <div className="w-full lg:w-1/2 h-1/2 lg:h-full flex flex-col p-4 border-r border-gray-200">
-                            <CameraPanel isActive={isCameraActive} onToggle={toggleCamera} />
+                            {/* ✅ Pass onDetection callback */}
+                            <CameraPanel
+                                isActive={isCameraActive}
+                                onToggle={toggleCamera}
+                                onDetection={handleSignDetected}
+                            />
                         </div>
 
                         {/* Conversation Output */}
@@ -129,17 +144,10 @@ const Translation = () => {
                                     </div>
                                 </div>
 
-                                {/* Playback Controls Placeholder */}
                                 <div className="flex items-center justify-center gap-4">
-                                    <button className="bg-white border border-gray-200 rounded-full p-3 text-gray-400 shadow-sm cursor-not-allowed" disabled>
-                                        ⏮
-                                    </button>
-                                    <button className="bg-teal-600 text-white rounded-full p-4 shadow-lg shadow-teal-500/30 cursor-not-allowed" disabled>
-                                        ▶
-                                    </button>
-                                    <button className="bg-white border border-gray-200 rounded-full p-3 text-gray-400 shadow-sm cursor-not-allowed" disabled>
-                                        🐢
-                                    </button>
+                                    <button className="bg-white border border-gray-200 rounded-full p-3 text-gray-400 shadow-sm cursor-not-allowed" disabled>⏮</button>
+                                    <button className="bg-teal-600 text-white rounded-full p-4 shadow-lg shadow-teal-500/30 cursor-not-allowed" disabled>▶</button>
+                                    <button className="bg-white border border-gray-200 rounded-full p-3 text-gray-400 shadow-sm cursor-not-allowed" disabled>🐢</button>
                                 </div>
                                 <p className="text-xs text-gray-400">Play / Pause / Slow Motion (coming soon)</p>
                             </div>
