@@ -32,7 +32,7 @@ exports.getDashboardStats = async (req, res) => {
 // @route   POST /api/admin/lessons
 exports.uploadLesson = async (req, res) => {
     try {
-        const { title, type, duration, order, moduleId } = req.body;
+        const { title, description, type, duration, order, moduleId } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded' });
@@ -54,6 +54,7 @@ exports.uploadLesson = async (req, res) => {
         // Create Lesson in DB
         const lesson = await Lesson.create({
             title,
+            description: description || '',
             type: type || 'teach',
             mediaUrl: result.secure_url,
             mediaType: resourceType,

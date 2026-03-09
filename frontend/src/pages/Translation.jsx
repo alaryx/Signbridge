@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import CameraPanel from '../components/translation/CameraPanel';
 import ConversationStream from '../components/translation/ConversationStream';
-import { Camera, Type, ArrowRight } from 'lucide-react';
+import SignVideoPlayer from '../components/translation/SignVideoPlayer';
+import { Camera, Type, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+const NODE_API_URL = 'http://localhost:5000/api/translate';
 
 const Translation = () => {
     const { user, updateUser } = useAuth();
@@ -10,6 +13,9 @@ const Translation = () => {
     const [isCameraActive, setIsCameraActive] = useState(true);
     const [textInput, setTextInput] = useState('');
     const [messages, setMessages] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [sequence, setSequence] = useState(null);
+    const [error, setError] = useState('');
 
     const toggleCamera = () => setIsCameraActive(!isCameraActive);
 
@@ -27,8 +33,14 @@ const Translation = () => {
         setMessages(prev => [...prev, newMsg]);
     };
 
-    const handleSendText = () => {
+    const handleSendText = async () => {
         if (!textInput.trim()) return;
+
+        setIsLoading(true);
+        setError('');
+        setSequence(null);
+
+        // Append to conversation history
         const newMsg = {
             id: Date.now(),
             direction: 'text_to_sign',
@@ -45,6 +57,27 @@ const Translation = () => {
             });
         }
 
+        // Fetch ISL video sequence from Node/MongoDB API
+        try {
+            const response = await fetch(NODE_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ direction: 'text_to_sign', content: textInput }),
+            });
+
+            if (!response.ok) throw new Error('Translation service unavailable.');
+
+            const data = await response.json();
+            if (!data.success) throw new Error(data.message || 'Translation failed.');
+
+            setSequence(data.sequence);
+        } catch (err) {
+            console.error('Translation error:', err);
+            setError(err.message || 'Could not connect to the translation service.');
+        } finally {
+            setIsLoading(false);
+        }
+
         setTextInput('');
     };
 
@@ -56,7 +89,7 @@ const Translation = () => {
                 <button
                     onClick={() => setMode('sign_to_text')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${mode === 'sign_to_text'
-                        ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/30 scale-105'
+                        ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/30 scale-105'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                 >
@@ -69,7 +102,7 @@ const Translation = () => {
                 <button
                     onClick={() => setMode('text_to_sign')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${mode === 'text_to_sign'
-                        ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/30 scale-105'
+                        ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/30 scale-105'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                 >
@@ -119,38 +152,37 @@ const Translation = () => {
                                 value={textInput}
                                 onChange={(e) => setTextInput(e.target.value)}
                                 placeholder="Type something to translate to ISL..."
-                                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-700 text-lg"
+                                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl p-4 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-700 text-lg"
                             ></textarea>
 
                             <button
                                 onClick={handleSendText}
-                                className="mt-4 bg-teal-600 text-white rounded-xl px-6 py-3 font-semibold hover:bg-teal-700 transition-colors shadow-md focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 flex items-center justify-center gap-2"
+                                className="mt-4 bg-brand-600 text-white rounded-xl px-6 py-3 font-semibold hover:bg-brand-700 transition-colors shadow-md focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 flex items-center justify-center gap-2"
                             >
                                 Translate to ISL <ArrowRight size={18} />
                             </button>
                         </div>
 
-                        {/* ISL Output Placeholder */}
-                        <div className="w-full lg:w-1/2 h-1/2 lg:h-full flex flex-col p-6 bg-gray-50 items-center justify-center">
-                            <div className="w-full max-w-md text-center space-y-6">
-                                <div className="w-full aspect-video bg-gray-900 rounded-2xl flex items-center justify-center border-2 border-gray-200 shadow-inner">
-                                    <div className="text-center space-y-3">
-                                        <div className="w-16 h-16 mx-auto bg-gray-800 rounded-full flex items-center justify-center">
-                                            <Type size={28} className="text-gray-500" />
-                                        </div>
-                                        <p className="text-gray-400 font-medium">ISL Output</p>
-                                        <p className="text-gray-600 text-xs">Avatar / GIF / Video will appear here</p>
-                                        <p className="text-gray-700 text-xs">(Waiting for OpenCV integration)</p>
+                        {/* ISL Video Output */}
+                        <div className="w-full lg:w-1/2 h-1/2 lg:h-full flex flex-col p-4 bg-gray-50 overflow-y-auto">
+                            {isLoading && (
+                                <div className="flex-1 flex flex-col items-center justify-center gap-3 text-brand-600">
+                                    <Loader2 size={40} className="animate-spin" />
+                                    <p className="font-semibold text-gray-500">Fetching ISL sequence...</p>
+                                </div>
+                            )}
+                            {error && !isLoading && (
+                                <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-xl flex items-start gap-3">
+                                    <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={20} />
+                                    <div>
+                                        <p className="font-bold text-red-700 text-sm">Translation Error</p>
+                                        <p className="text-red-600 text-sm mt-1">{error}</p>
                                     </div>
                                 </div>
-
-                                <div className="flex items-center justify-center gap-4">
-                                    <button className="bg-white border border-gray-200 rounded-full p-3 text-gray-400 shadow-sm cursor-not-allowed" disabled>⏮</button>
-                                    <button className="bg-teal-600 text-white rounded-full p-4 shadow-lg shadow-teal-500/30 cursor-not-allowed" disabled>▶</button>
-                                    <button className="bg-white border border-gray-200 rounded-full p-3 text-gray-400 shadow-sm cursor-not-allowed" disabled>🐢</button>
-                                </div>
-                                <p className="text-xs text-gray-400">Play / Pause / Slow Motion (coming soon)</p>
-                            </div>
+                            )}
+                            {!isLoading && (
+                                <SignVideoPlayer sequence={sequence} />
+                            )}
                         </div>
                     </>
                 )}

@@ -289,7 +289,7 @@ const LearnISL = () => {
             {completedModulePopup && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center animate-in zoom-in-95 fill-mode-both border border-gray-100">
-                        <div className="w-20 h-20 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <div className="w-20 h-20 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Trophy size={40} />
                         </div>
                         <h2 className="text-3xl font-black text-gray-900 mb-2">Module Complete!</h2>
@@ -300,7 +300,7 @@ const LearnISL = () => {
                         <div className="space-y-3">
                             <button
                                 onClick={handleStartTest}
-                                className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-teal-600/30 transition-all hover:-translate-y-1 active:translate-y-0"
+                                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-600/30 transition-all hover:-translate-y-1 active:translate-y-0"
                             >
                                 Test Your Knowledge
                             </button>
@@ -331,7 +331,7 @@ const LearnISL = () => {
                 {/* Header section */}
                 <div className="mb-4 animate-in fade-in slide-in-from-top-4 text-center sm:text-left">
                     <h1 className="text-3xl font-extrabold text-gray-900 flex items-center justify-center sm:justify-start gap-3">
-                        <BookOpen className="text-teal-600" /> Welcome, {userProfile.name}!
+                        <BookOpen className="text-brand-600" /> Welcome, {userProfile.name}!
                     </h1>
                     <p className="text-gray-500 mt-2">Continue your learning journey.</p>
                 </div>

@@ -19,10 +19,10 @@ const LevelNode = ({ lesson, index, status, onClick }) => {
                 };
             case 'active':
                 return {
-                    bg: 'bg-teal-500',
-                    border: 'border-teal-600',
+                    bg: 'bg-brand-500',
+                    border: 'border-brand-600',
                     text: 'text-white',
-                    shadow: 'shadow-[0_4px_0_rgb(13,148,136)] ring-4 ring-teal-200',
+                    shadow: 'shadow-[0_4px_0_rgb(13,148,136)] ring-4 ring-brand-200',
                     icon: <Play className="w-6 h-6 ml-1 fill-white" />
                 };
             case 'locked':
@@ -108,13 +108,13 @@ const LearningPath = ({ curriculum, userProgress, onLessonSelect, onTestSelect }
             {curriculum.map((course, cIdx) => (
                 <div key={course._id} className="w-full flex flex-col items-center mb-16">
                     {/* Course Header Banner */}
-                    <div className="w-full bg-teal-500 text-white rounded-2xl p-6 mb-12 relative overflow-hidden shadow-sm">
+                    <div className="w-full bg-brand-500 text-white rounded-2xl p-6 mb-12 relative overflow-hidden shadow-sm">
                         <div className="relative z-10 flex justify-between items-center">
                             <div>
                                 <h2 className="text-2xl font-black capitalize tracking-tight">{course.title}</h2>
-                                <p className="text-teal-100 font-medium opacity-90">{course.description || 'Master the basics'}</p>
+                                <p className="text-brand-100 font-medium opacity-90">{course.description || 'Master the basics'}</p>
                             </div>
-                            <div className="text-teal-700 bg-teal-400/30 px-3 py-1.5 rounded-lg font-black tracking-widest text-sm uppercase">
+                            <div className="text-brand-700 bg-brand-400/30 px-3 py-1.5 rounded-lg font-black tracking-widest text-sm uppercase">
                                 Unit {cIdx + 1}
                             </div>
                         </div>

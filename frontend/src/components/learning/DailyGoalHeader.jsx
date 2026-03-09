@@ -13,8 +13,8 @@ const DailyGoalHeader = ({ userProgress }) => {
 
                 {/* Course Indicator */}
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center">
-                        <span className="text-teal-600 font-bold text-sm">ISL</span>
+                    <div className="w-8 h-8 rounded-lg bg-brand-100 flex items-center justify-center">
+                        <span className="text-brand-600 font-bold text-sm">ISL</span>
                     </div>
                 </div>
 

@@ -1,9 +1,10 @@
 const axios = require("axios");
 const FormData = require("form-data");
+const Sign = require('../models/Sign');
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
 
-exports.translate = (req, res) => {
+exports.translate = async (req, res) => {
   const { direction, content } = req.body;
 
   if (!direction || !content) {
@@ -12,24 +13,64 @@ exports.translate = (req, res) => {
       .json({ status: "error", message: "Direction and content required" });
   }
 
-  let output = "";
-
-  if (direction === "sign_to_text") {
-    output = `Mock translated text for sign gestures: [${content}]`;
-  } else if (direction === "text_to_sign") {
-    output = `mock_sign_gif_url_for_text: [${content}]`;
-  } else {
-    return res
-      .status(400)
-      .json({ status: "error", message: "Invalid direction" });
+  if (direction === 'sign_to_text') {
+    const output = `Mock translated text for sign gestures: [${content}]`;
+    return res.status(200).json({
+      status: 'success',
+      direction,
+      output,
+      confidence: 0.95
+    });
   }
 
-  res.status(200).json({
-    status: "success",
-    direction,
-    output,
-    confidence: 0.95,
-  });
+  if (direction === 'text_to_sign') {
+    try {
+      const rawWords = content.toUpperCase().split(/\s+/);
+      let sequence = [];
+
+      for (const wordStr of rawWords) {
+        const cleanWord = wordStr.replace(/[^A-Z0-9]/g, '');
+        if (!cleanWord) continue;
+
+        // 1. Try to find the complete word in the DB
+        const signWord = await Sign.findOne({ word: cleanWord, type: 'word' });
+
+        if (signWord) {
+          sequence.push({
+            type: 'sign',
+            word: cleanWord,
+            videoUrl: signWord.videoUrl
+          });
+        } else {
+          // 2. Fallback to fingerspelling character by character
+          for (const char of cleanWord.split('')) {
+            const charType = isNaN(char) ? 'letter' : 'number';
+            const signChar = await Sign.findOne({ word: char, type: charType });
+
+            // Push if found, omit gracefully if symbol doesn't exist
+            if (signChar) {
+              sequence.push({
+                type: 'fingerspell',
+                character: char,
+                videoUrl: signChar.videoUrl
+              });
+            }
+          }
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        sequence
+      });
+
+    } catch (error) {
+      console.error('Translation error:', error);
+      return res.status(500).json({ success: false, message: 'Server error during translation' });
+    }
+  }
+
+  return res.status(400).json({ status: 'error', message: 'Invalid direction' });
 };
 
 /**

@@ -14,7 +14,7 @@ const AdminDashboard = () => {
 
     // Form states
     const [uploadFile, setUploadFile] = useState(null);
-    const [lessonData, setLessonData] = useState({ title: '', type: 'teach', duration: '1 min', courseId: '', moduleId: '' });
+    const [lessonData, setLessonData] = useState({ title: '', description: '', type: 'teach', duration: '1 min', courseId: '', moduleId: '' });
     const [newCourseName, setNewCourseName] = useState('');
     const [newModuleData, setNewModuleData] = useState({ title: '', order: 1, courseId: '' });
     const [uploading, setUploading] = useState(false);
@@ -127,6 +127,7 @@ const AdminDashboard = () => {
         const formData = new FormData();
         formData.append('file', uploadFile);
         formData.append('title', lessonData.title);
+        formData.append('description', lessonData.description);
         formData.append('type', lessonData.type);
         formData.append('duration', lessonData.duration);
         formData.append('moduleId', lessonData.moduleId);
@@ -140,7 +141,7 @@ const AdminDashboard = () => {
             if (res.ok) {
                 setMessage('Lesson uploaded successfully!');
                 setUploadFile(null);
-                setLessonData({ title: '', type: 'teach', duration: '1 min', courseId: lessonData.courseId, moduleId: lessonData.moduleId });
+                setLessonData({ title: '', description: '', type: 'teach', duration: '1 min', courseId: lessonData.courseId, moduleId: lessonData.moduleId });
                 fetchOverviewData();
             } else {
                 const err = await res.json();
@@ -230,8 +231,8 @@ const AdminDashboard = () => {
                     <h1 className="text-3xl font-bold text-gray-900">Admin Console</h1>
                     <p className="text-gray-500 mt-1">Manage content, view metrics, and resolve queries.</p>
                 </div>
-                <div className="bg-teal-50 px-4 py-2 rounded-lg border border-teal-100 hidden sm:block">
-                    <span className="text-sm font-semibold text-teal-800">Admin Role Checked</span>
+                <div className="bg-brand-50 px-4 py-2 rounded-lg border border-brand-100 hidden sm:block">
+                    <span className="text-sm font-semibold text-brand-800">Admin Role Checked</span>
                 </div>
             </div>
 
@@ -242,7 +243,7 @@ const AdminDashboard = () => {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`flex-1 py-2.5 px-4 text-sm font-semibold rounded-lg capitalize transition-all duration-200 ${activeTab === tab
-                            ? 'bg-white text-teal-700 shadow border border-gray-100'
+                            ? 'bg-white text-brand-700 shadow border border-gray-100'
                             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                             }`}
                     >
@@ -275,19 +276,29 @@ const AdminDashboard = () => {
                         {/* File Upload Section */}
                         <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <div className="flex items-center gap-2 mb-6">
-                                <Upload className="text-teal-600" />
+                                <Upload className="text-brand-600" />
                                 <h2 className="text-xl font-bold text-gray-900">Upload New Lesson</h2>
                             </div>
                             <form onSubmit={handleUpload} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Lesson Title</label>
                                     <input type="text" required value={lessonData.title} onChange={e => setLessonData({ ...lessonData, title: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" placeholder="e.g. How to sign 'Hello'" />
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" placeholder="e.g. How to sign 'Hello'" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Action Description</label>
+                                    <textarea
+                                        value={lessonData.description}
+                                        onChange={e => setLessonData({ ...lessonData, description: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 resize-none"
+                                        rows={3}
+                                        placeholder="Describe the sign action, e.g. 'Raise your open right hand to your forehead, palm outward, then bring it forward and down.'"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Select Course</label>
                                     <select required value={lessonData.courseId} onChange={handleCourseChangeForUpload}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 bg-white">
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white">
                                         <option value="" disabled>-- Choose Course --</option>
                                         {courses.map(c => <option key={c._id} value={c._id}>{c.title}</option>)}
                                     </select>
@@ -295,7 +306,7 @@ const AdminDashboard = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Select Module</label>
                                     <select required value={lessonData.moduleId} onChange={e => setLessonData({ ...lessonData, moduleId: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 bg-white" disabled={!lessonData.courseId}>
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white" disabled={!lessonData.courseId}>
                                         <option value="" disabled>-- Choose Module --</option>
                                         {modules.map(m => <option key={m._id} value={m._id}>{m.title}</option>)}
                                     </select>
@@ -304,7 +315,7 @@ const AdminDashboard = () => {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                                         <select value={lessonData.type} onChange={e => setLessonData({ ...lessonData, type: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 bg-white">
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white">
                                             <option value="teach">Teach</option>
                                             <option value="practice">Practice</option>
                                         </select>
@@ -312,14 +323,14 @@ const AdminDashboard = () => {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
                                         <input type="text" value={lessonData.duration} onChange={e => setLessonData({ ...lessonData, duration: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500" placeholder="e.g. 2 min" />
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" placeholder="e.g. 2 min" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Media File</label>
                                     <input type="file" onChange={e => setUploadFile(e.target.files[0])} accept="video/*, image/*" className="text-sm" required />
                                 </div>
-                                <button type="submit" disabled={uploading} className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold transition-colors">
+                                <button type="submit" disabled={uploading} className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-lg font-bold transition-colors">
                                     {uploading ? 'Uploading...' : 'Upload Lesson'}
                                 </button>
                                 {message && <p className={`text-sm mt-2 ${message.includes('success') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
@@ -327,7 +338,7 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
-                            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2"><MessageSquare className="text-teal-600" /> Recent Queries</h2>
+                            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2"><MessageSquare className="text-brand-600" /> Recent Queries</h2>
                             <div className="text-sm text-gray-500 italic">No queries API seeded fully yet.</div>
                         </div>
                     </div>
@@ -338,10 +349,10 @@ const AdminDashboard = () => {
             {activeTab === 'courses' && (
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-in fade-in duration-300">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold text-gray-900 border-l-4 border-teal-500 pl-3">Manage Levels (Courses)</h2>
+                        <h2 className="text-xl font-bold text-gray-900 border-l-4 border-brand-500 pl-3">Manage Levels (Courses)</h2>
                         <form onSubmit={createCourse} className="flex gap-2">
                             <input type="text" value={newCourseName} onChange={e => setNewCourseName(e.target.value)} placeholder="New Course Title (e.g. Level 3)" className="px-4 py-2 border border-gray-300 rounded-lg text-sm" required />
-                            <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-teal-700"><Plus size={16} /> Add</button>
+                            <button type="submit" className="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-brand-700"><Plus size={16} /> Add</button>
                         </form>
                     </div>
                     <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">

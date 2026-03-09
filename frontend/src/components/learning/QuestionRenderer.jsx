@@ -11,7 +11,7 @@ const QuestionRenderer = ({ question, onAnswer }) => {
                         <button
                             key={index}
                             onClick={() => onAnswer(option)}
-                            className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-teal-500 hover:bg-teal-50 transition-colors"
+                            className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-brand-500 hover:bg-brand-50 transition-colors"
                         >
                             {option.text}
                         </button>
@@ -29,7 +29,7 @@ const QuestionRenderer = ({ question, onAnswer }) => {
                         <button
                             key={index}
                             onClick={() => onAnswer(option)} // Just proceeding on click for MVP flow
-                            className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-teal-500 hover:bg-teal-50 transition-colors"
+                            className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-brand-500 hover:bg-brand-50 transition-colors"
                         >
                             {option.text}
                         </button>
@@ -50,7 +50,7 @@ const QuestionRenderer = ({ question, onAnswer }) => {
                             <button
                                 key={index}
                                 onClick={() => onAnswer(option)}
-                                className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-teal-500 hover:bg-teal-50 transition-colors"
+                                className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-brand-500 hover:bg-brand-50 transition-colors"
                             >
                                 {option.text}
                             </button>
@@ -65,12 +65,12 @@ const QuestionRenderer = ({ question, onAnswer }) => {
                 <div className="space-y-6 mt-6">
                     <div className="w-full max-w-md mx-auto aspect-video bg-gray-900 rounded-xl flex flex-col items-center justify-center text-white relative overflow-hidden">
                         <span className="text-gray-400 mb-2">📷 Camera Feed Placeholder</span>
-                        <div className="absolute inset-0 border-4 border-teal-500 rounded-xl opacity-50"></div>
+                        <div className="absolute inset-0 border-4 border-brand-500 rounded-xl opacity-50"></div>
                     </div>
                     <div className="flex gap-4 justify-center">
                         <button
                             onClick={() => onAnswer({ text: 'Completed Practice' })}
-                            className="px-6 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700"
+                            className="px-6 py-3 bg-brand-600 text-white rounded-xl font-bold hover:bg-brand-700"
                         >
                             I Did It!
                         </button>
@@ -90,7 +90,7 @@ const QuestionRenderer = ({ question, onAnswer }) => {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <span className="inline-block px-3 py-1 bg-teal-100 text-teal-800 text-xs font-bold uppercase rounded-full mb-4 tracking-wider">
+            <span className="inline-block px-3 py-1 bg-brand-100 text-brand-800 text-xs font-bold uppercase rounded-full mb-4 tracking-wider">
                 {question.category || 'Question'}
             </span>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">{question.question}</h3>

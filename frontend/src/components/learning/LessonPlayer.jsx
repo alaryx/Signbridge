@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Camera, VideoOff, CheckCircle, Loader2, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Camera, VideoOff, CheckCircle, Loader2, PlayCircle, Info, Sparkles, Trophy } from 'lucide-react';
 
 const LessonPlayer = ({ lesson, onBack, onComplete }) => {
     const [mode, setMode] = useState('learn'); // 'learn', 'practice', 'scanning', 'result'
@@ -18,12 +18,11 @@ const LessonPlayer = ({ lesson, onBack, onComplete }) => {
         }
     };
 
-    // React to the stream state change to map it to the video ref
     useEffect(() => {
         if (stream && videoRef.current) {
             videoRef.current.srcObject = stream;
         }
-    }, [stream, mode]); // run when mode switches and videoRef mounts
+    }, [stream, mode]);
 
     const stopCamera = () => {
         if (stream) {
@@ -44,12 +43,12 @@ const LessonPlayer = ({ lesson, onBack, onComplete }) => {
                     setTimeout(() => {
                         setMode('result');
                         stopCamera();
-                    }, 500);
+                    }, 800);
                     return 100;
                 }
                 return next;
             });
-        }, 150);
+        }, 120);
     };
 
     const handleContinue = () => {
@@ -63,157 +62,198 @@ const LessonPlayer = ({ lesson, onBack, onComplete }) => {
     if (!lesson) return null;
 
     return (
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 animate-in fade-in zoom-in-95 duration-500 pb-24">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in duration-700 pb-32">
+
+            {/* Header / Navigation */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
                 <button
                     onClick={() => { stopCamera(); onBack(); }}
-                    className="flex items-center gap-2 text-gray-500 hover:text-teal-600 font-medium transition-colors"
+                    className="group flex items-center gap-2 text-gray-500 hover:text-teal-600 font-bold transition-all px-4 py-2 rounded-xl hover:bg-teal-50 w-fit -ml-4"
                 >
-                    <ArrowLeft size={20} /> Back to Module
+                    <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                    Back to Module
                 </button>
-                <div className="flex items-center gap-2 bg-teal-50 text-teal-700 px-4 py-2 rounded-full text-sm font-bold shadow-sm border border-teal-100">
-                    <PlayCircle size={18} /> Interactive Lesson
+
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-sm font-black shadow-sm border border-indigo-100 uppercase tracking-wider">
+                        <Sparkles size={16} /> Interactive Lesson
+                    </div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden flex flex-col lg:flex-row min-h-[600px]">
-                {/* Left Side: Learning Content */}
-                <div className="w-full lg:w-1/2 bg-gray-950 relative flex items-center justify-center">
-                    {lesson.mediaType === 'video' || lesson.mediaUrl?.includes('.mp4') ? (
-                        <video
-                            src={lesson.mediaUrl}
-                            controls
-                            autoPlay
-                            muted
-                            className="w-full max-h-[600px] object-contain bg-black shadow-2xl"
-                            crossOrigin="anonymous"
-                        />
-                    ) : (
-                        <img
-                            src={lesson.mediaUrl}
-                            alt={lesson.title}
-                            className="w-full max-h-[600px] object-contain bg-black"
-                        />
-                    )}
-                    <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white px-5 py-2 rounded-full text-sm font-bold border border-white/10 shadow-lg tracking-wide z-10">
-                        {lesson.title}
-                    </div>
-                </div>
+            {/* Main Lesson Title Section - High Impact */}
+            <div className="mb-12">
+                <h1 className="text-4xl md:text-6xl font-black text-gray-900 leading-tight tracking-tighter">
+                    {lesson.title}
+                </h1>
+                <div className="w-24 h-2 bg-teal-500 rounded-full mt-4"></div>
+            </div>
 
-                {/* Right Side: Interactive AI Section */}
-                <div className="w-full lg:w-1/2 p-8 lg:p-12 flex flex-col bg-gray-50/50">
-                    <div className="mb-8">
-                        <h2 className="text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">Practice Time</h2>
-                        <p className="text-gray-500 leading-relaxed">Watch the video carefully, then try to perform the sign in front of your camera. Our AI model will evaluate your accuracy in real-time.</p>
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-                    <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
-                        {mode === 'learn' && (
-                            <div className="text-center animate-in fade-in slide-in-from-bottom-4">
-                                <div className="w-28 h-28 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner border border-teal-100">
-                                    <Camera size={48} className="text-teal-600" />
-                                </div>
-                                <h3 className="text-2xl font-bold text-gray-800 mb-3">Ready to test your knowledge?</h3>
-                                <p className="text-sm text-gray-500 mb-10 mx-auto">Ensure you are in a brightly lit room and your upper body is fully visible in the frame.</p>
-                                <button
-                                    onClick={startCamera}
-                                    className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl ring-4 ring-teal-500/20 transition-all transform hover:-translate-y-1 w-full text-lg"
-                                >
-                                    Start Camera & Practice
-                                </button>
-                            </div>
+                {/* Left Column: Media & Instructions (7/12) */}
+                <div className="lg:col-span-7 space-y-8">
+
+                    {/* Media Card */}
+                    <div className="bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-white/10 relative group">
+                        {lesson.mediaType === 'video' || lesson.mediaUrl?.includes('.mp4') ? (
+                            <video
+                                src={lesson.mediaUrl}
+                                controls
+                                autoPlay
+                                loop
+                                muted
+                                className="w-full aspect-video object-contain"
+                                crossOrigin="anonymous"
+                            />
+                        ) : (
+                            <img
+                                src={lesson.mediaUrl}
+                                alt={lesson.title}
+                                className="w-full aspect-video object-contain"
+                            />
                         )}
 
-                        {(mode === 'practice' || mode === 'scanning') && (
-                            <div className="relative w-full aspect-[4/3] bg-gray-900 rounded-3xl overflow-hidden border-4 border-gray-800 shadow-2xl mb-6 flex items-center justify-center group animate-in zoom-in-95">
-                                {!stream ? (
-                                    <div className="flex flex-col items-center justify-center">
-                                        <Loader2 className="w-10 h-10 text-gray-500 animate-spin mb-4" />
-                                        <p className="text-gray-400 font-medium">Accessing camera...</p>
-                                    </div>
-                                ) : (
-                                    <video
-                                        ref={videoRef}
-                                        autoPlay
-                                        playsInline
-                                        muted
-                                        className={`w-full h-full object-cover ${(mode === 'practice' || mode === 'scanning') ? '-scale-x-100' : ''}`} // Mirror camera manually via scale
-                                        style={{ transform: "rotateY(180deg)" }}
-                                    />
-                                )}
+                        {/* Status Overlay */}
+                        <div className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/20 text-white text-xs font-bold uppercase tracking-widest pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                            <PlayCircle size={14} className="text-teal-400" /> Reference View
+                        </div>
+                    </div>
 
-                                {mode === 'practice' && stream && (
-                                    <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex justify-center">
+                    {/* Action Description Block - Premium Card */}
+                    {lesson.description && (
+                        <div className="bg-white rounded-[2rem] p-8 shadow-xl shadow-gray-200/50 border border-gray-100 relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-2 h-full bg-teal-500"></div>
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 bg-teal-50 rounded-2xl text-teal-600 transition-transform group-hover:scale-110">
+                                    <Info size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-teal-600 uppercase tracking-widest mb-2">How to sign</h3>
+                                    <p className="text-gray-700 text-lg leading-relaxed font-medium">
+                                        {lesson.description}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Column: Interaction & AI (5/12) */}
+                <div className="lg:col-span-5 h-full">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/60 border border-gray-100 p-8 md:p-10 h-full flex flex-col min-h-[500px]">
+
+                        <div className="mb-10 text-center lg:text-left">
+                            <h2 className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight">Practice Zone</h2>
+                            <p className="text-gray-500 font-medium">Capture your movements via camera for AI evaluation.</p>
+                        </div>
+
+                        <div className="flex-1 flex flex-col justify-center">
+                            {mode === 'learn' && (
+                                <div className="text-center animate-in fade-in slide-in-from-bottom-6 duration-500">
+                                    <div className="relative inline-block mb-10">
+                                        <div className="w-32 h-32 bg-teal-50 rounded-full flex items-center justify-center border-2 border-teal-100 shadow-inner">
+                                            <Camera size={56} className="text-teal-600" />
+                                        </div>
+                                        <div className="absolute -bottom-2 -right-2 bg-white p-2 rounded-xl shadow-lg border border-gray-100">
+                                            <Sparkles size={20} className="text-amber-500" />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-2xl font-black text-gray-900 mb-4">Test Your Skills</h3>
+                                    <p className="text-gray-500 leading-relaxed max-w-xs mx-auto mb-10">
+                                        Join the interactive session to get instant AI feedback on your sign accuracy.
+                                    </p>
+                                    <button
+                                        onClick={startCamera}
+                                        className="w-full bg-gray-900 hover:bg-black text-white font-black py-5 px-8 rounded-2xl shadow-2xl hover:-translate-y-1 transition-all active:scale-95 text-lg"
+                                    >
+                                        Activate AI Camera
+                                    </button>
+                                </div>
+                            )}
+
+                            {(mode === 'practice' || mode === 'scanning') && (
+                                <div className="flex-1 flex flex-col">
+                                    <div className="relative w-full aspect-[4/3] bg-gray-900 rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl mb-8 group ring-1 ring-gray-100">
+                                        {!stream ? (
+                                            <div className="h-full flex flex-col items-center justify-center gap-4 text-gray-400">
+                                                <Loader2 size={40} className="animate-spin text-teal-500" />
+                                                <p className="font-bold tracking-widest uppercase text-xs">Awaiting Camera...</p>
+                                            </div>
+                                        ) : (
+                                            <video
+                                                ref={videoRef}
+                                                autoPlay
+                                                playsInline
+                                                muted
+                                                className="w-full h-full object-cover -scale-x-100"
+                                            />
+                                        )}
+
+                                        {mode === 'scanning' && (
+                                            <div className="absolute inset-0 bg-indigo-950/60 backdrop-blur-[4px] flex flex-col items-center justify-center animate-in fade-in duration-300">
+                                                <div className="w-48 h-56 border-2 border-dashed border-indigo-400/50 rounded-2xl relative">
+                                                    <div className="absolute inset-0 border-2 border-indigo-400 rounded-2xl animate-[pulse_2s_infinite]"></div>
+                                                    <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-400/30 overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-indigo-400 shadow-[0_0_15px_rgba(129,140,248,1)] transition-all duration-200 ease-linear"
+                                                            style={{ width: `${scanProgress}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="mt-8 flex items-center gap-3 bg-white/10 backdrop-blur-xl px-6 py-3 rounded-2xl border border-white/20 text-white shadow-2xl">
+                                                    <Loader2 size={18} className="animate-spin text-indigo-300" />
+                                                    <span className="font-black text-xs uppercase tracking-[0.2em]">Deep Learning Analysis...</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="absolute top-4 left-4 bg-teal-500/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Live Engine</span>
+                                        </div>
+                                    </div>
+
+                                    {mode === 'practice' && stream && (
                                         <button
                                             onClick={startScanning}
-                                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg ring-4 ring-indigo-500/30 transition-all transform hover:-translate-y-1 w-full max-w-xs"
+                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 px-8 rounded-2xl shadow-xl hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3"
                                         >
-                                            Evaluate My Sign
+                                            <Camera size={20} /> Evaluate Accuracy
                                         </button>
-                                    </div>
-                                )}
-
-                                {mode === 'scanning' && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-indigo-900/40 backdrop-blur-[2px]">
-                                        <div className="w-full absolute top-0 h-1.5 bg-indigo-500/20">
-                                            <div className="h-full bg-indigo-400 absolute top-0 left-0 transition-all duration-150 ease-linear shadow-[0_0_20px_rgba(129,140,248,1)]" style={{ width: `${scanProgress}%` }}></div>
-                                        </div>
-                                        {/* AI Skeleton Bounding Box Overlay */}
-                                        <div className="w-56 h-64 border-2 border-indigo-400/60 rounded-2xl mb-6 relative overflow-hidden">
-                                            <div className="absolute top-0 left-0 w-full h-full border-t-4 border-indigo-300 shadow-[0_4px_10px_rgba(129,140,248,0.5)] animate-[scan_2s_ease-in-out_infinite]"></div>
-                                            <div className="absolute -left-2 top-1/2 w-4 h-4 bg-indigo-400 rounded-full shadow-[0_0_10px_rgba(129,140,248,1)]"></div>
-                                            <div className="absolute -right-2 top-1/3 w-4 h-4 bg-indigo-400 rounded-full shadow-[0_0_10px_rgba(129,140,248,1)]"></div>
-                                        </div>
-                                        <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md px-6 py-3 rounded-full border border-indigo-500/40 shadow-xl">
-                                            <Loader2 size={22} className="text-indigo-400 animate-spin" />
-                                            <span className="text-white font-bold tracking-wide">AI is analyzing pose...</span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Header tags */}
-                                {stream && (
-                                    <div className="absolute top-4 left-4 flex gap-2">
-                                        <div className="flex bg-black/50 backdrop-blur-md rounded-full px-4 py-1.5 items-center gap-2 border border-white/10">
-                                            <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,1)]"></div>
-                                            <span className="text-white text-xs font-bold tracking-wider">LIVE AI ENGINES</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {mode === 'result' && (
-                            <div className="text-center animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">
-                                <div className="w-28 h-28 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(74,222,128,0.4)] border-2 border-green-200">
-                                    <CheckCircle size={56} className="text-green-500" />
+                                    )}
                                 </div>
-                                <h3 className="text-4xl font-black text-gray-900 mb-3 tracking-tight">Excellent!</h3>
-                                <div className="inline-flex items-center justify-center space-x-2 bg-green-100 text-green-800 px-5 py-2 rounded-full font-bold mb-6 border border-green-200 shadow-sm">
-                                    <span>AI Match Confidence:</span>
-                                    <span className="text-green-600 font-black text-lg">98.4%</span>
+                            )}
+
+                            {mode === 'result' && (
+                                <div className="text-center animate-in zoom-in-95 duration-700">
+                                    <div className="w-24 h-24 bg-green-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border-2 border-green-100 shadow-xl shadow-green-100/50 relative">
+                                        <Trophy size={48} className="text-green-500" />
+                                        <div className="absolute -top-3 -right-3 bg-green-500 text-white p-2 rounded-full shadow-lg">
+                                            <CheckCircle size={16} />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-3xl font-black text-gray-900 mb-2 leading-none">Victory!</h3>
+                                    <div className="inline-block bg-green-100 text-green-700 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-8">
+                                        Hand Match: 98.4%
+                                    </div>
+
+                                    <p className="text-gray-500 font-medium mb-12 px-6">
+                                        Outstanding performance! Your signs are fluid and match the reference model perfectly.
+                                    </p>
+
+                                    <button
+                                        onClick={handleContinue}
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-5 px-8 rounded-2xl shadow-2xl hover:-translate-y-1 transition-all active:scale-95 text-lg"
+                                    >
+                                        Claim Rewards (+50 XP)
+                                    </button>
                                 </div>
-                                <p className="text-gray-500 mb-10 max-w-sm mx-auto text-lg">You performed the sign perfectly! Your movement tracked cleanly with the database model.</p>
-                                <button
-                                    onClick={handleContinue}
-                                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl ring-4 ring-green-500/20 transition-all transform hover:-translate-y-1 w-full text-lg"
-                                >
-                                    Continue (+50 XP)
-                                </button>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <style jsx>{`
-                @keyframes scan {
-                    0% { transform: translateY(-100%); opacity: 0; }
-                    50% { transform: translateY(100%); opacity: 1; }
-                    100% { transform: translateY(300%); opacity: 0; }
-                }
-            `}</style>
         </div>
     );
 };

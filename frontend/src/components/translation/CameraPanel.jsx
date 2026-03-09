@@ -104,7 +104,7 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
       setError(null);
 
       const response = await axios.post(
-        "/api/translate/detect",
+        "http://localhost:5000/api/translate/detect",
         { frame: frameData },
         { timeout: 15000 },
       );
@@ -191,11 +191,10 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
             </div>
           )}
 
-          <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-            modelStatus === "ready" ? "bg-green-500/20 text-green-300"
-            : modelStatus === "loading" ? "bg-yellow-500/20 text-yellow-300"
-            : "bg-red-500/20 text-red-300"
-          }`}>
+          <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${modelStatus === "ready" ? "bg-green-500/20 text-green-300"
+              : modelStatus === "loading" ? "bg-yellow-500/20 text-yellow-300"
+                : "bg-red-500/20 text-red-300"
+            }`}>
             <Wifi size={12} />
             {modelStatus === "ready" ? "Model Ready" : modelStatus === "loading" ? "Loading..." : "Offline"}
           </div>
@@ -272,11 +271,10 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
         <div className="flex justify-center items-center gap-6">
           <button
             onClick={onToggle}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 ${
-              isActive
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 ${isActive
                 ? "bg-red-500 hover:bg-red-600 focus:ring-4 focus:ring-red-500/30"
-                : "bg-teal-500 hover:bg-teal-600 focus:ring-4 focus:ring-teal-500/30"
-            }`}
+                : "bg-brand-500 hover:bg-brand-600 focus:ring-4 focus:ring-brand-500/30"
+              }`}
             title={isActive ? "Stop Camera" : "Start Camera"}
           >
             {isActive ? <VideoOff size={24} className="text-white" /> : <Camera size={24} className="text-white" />}

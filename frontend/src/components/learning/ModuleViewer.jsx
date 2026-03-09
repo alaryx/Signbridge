@@ -9,7 +9,7 @@ const ModuleViewer = ({ moduleData, completedLessonIds = [], onBack, onStartLess
             {/* Header / Navigation */}
             <button
                 onClick={onBack}
-                className="flex items-center gap-2 text-gray-500 hover:text-teal-600 font-medium mb-6 transition-colors"
+                className="flex items-center gap-2 text-gray-500 hover:text-brand-600 font-medium mb-6 transition-colors"
             >
                 <ArrowLeft size={20} /> Back to Course Dashboard
             </button>
@@ -17,7 +17,7 @@ const ModuleViewer = ({ moduleData, completedLessonIds = [], onBack, onStartLess
             {/* Module Context */}
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
                 <div className="flex gap-3 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 bg-teal-50 text-teal-700 rounded-full">
+                    <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 bg-brand-50 text-brand-700 rounded-full">
                         Module View
                     </span>
                     <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 bg-amber-50 text-amber-600 rounded-full">
@@ -36,14 +36,14 @@ const ModuleViewer = ({ moduleData, completedLessonIds = [], onBack, onStartLess
                     <div
                         key={lesson._id || lesson.id}
                         onClick={() => onStartLesson(lesson)}
-                        className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:border-teal-300 hover:shadow-md transition-all group"
+                        className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer hover:border-brand-300 hover:shadow-md transition-all group"
                     >
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 group-hover:scale-110 group-hover:bg-teal-100 transition-all shadow-sm">
+                            <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 group-hover:scale-110 group-hover:bg-brand-100 transition-all shadow-sm">
                                 <PlayCircle size={24} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-gray-900 group-hover:text-teal-700 transition-colors">
+                                <h3 className="font-bold text-gray-900 group-hover:text-brand-700 transition-colors">
                                     {index + 1}. {lesson.title}
                                 </h3>
                                 <p className="text-sm text-gray-500 flex items-center gap-2 mt-1 font-medium">

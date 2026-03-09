@@ -10,6 +10,10 @@ const lessonSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    description: {
+        type: String,
+        default: ''
+    },
     type: {
         type: String,
         enum: ['teach', 'practice', 'teach_practice', 'teach_recognize', 'recognize'],

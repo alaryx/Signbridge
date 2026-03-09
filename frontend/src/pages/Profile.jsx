@@ -40,7 +40,7 @@ const Profile = () => {
                 {/* Left Column: User Card */}
                 <div className="w-full md:w-1/3">
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
-                        <div className="bg-gradient-to-r from-teal-500 to-emerald-400 h-32 relative">
+                        <div className="bg-gradient-to-r from-brand-500 to-emerald-400 h-32 relative">
                             {user.role === 'admin' && (
                                 <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1 border border-white/20">
                                     <Settings size={14} /> Admin
@@ -49,7 +49,7 @@ const Profile = () => {
                         </div>
                         <div className="px-6 pb-8 relative text-center">
                             <div className="w-24 h-24 bg-white rounded-full p-2 absolute -top-12 left-1/2 -translate-x-1/2 shadow-lg">
-                                <div className="w-full h-full bg-teal-100 rounded-full flex items-center justify-center text-teal-600">
+                                <div className="w-full h-full bg-brand-100 rounded-full flex items-center justify-center text-brand-600">
                                     <User size={40} />
                                 </div>
                             </div>
@@ -69,7 +69,7 @@ const Profile = () => {
                             <div className="mt-8 pt-6 border-t border-gray-100 space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-500 font-medium text-sm">Learning Rank</span>
-                                    <span className="bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-sm font-bold border border-teal-100">
+                                    <span className="bg-brand-50 text-brand-700 px-3 py-1 rounded-full text-sm font-bold border border-brand-100">
                                         {level}
                                     </span>
                                 </div>
@@ -97,10 +97,10 @@ const Profile = () => {
                     {/* Stats Grid */}
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <Activity className="text-teal-600" /> Learning Progress
+                            <Activity className="text-brand-600" /> Learning Progress
                         </h2>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center text-center hover:border-teal-200 transition-colors">
+                            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center text-center hover:border-brand-200 transition-colors">
                                 <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mb-3 text-amber-500">
                                     <Trophy size={24} />
                                 </div>
@@ -130,7 +130,7 @@ const Profile = () => {
                     <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                <Clock className="text-teal-600" /> Recent Translations
+                                <Clock className="text-brand-600" /> Recent Translations
                             </h2>
                         </div>
 
@@ -145,7 +145,7 @@ const Profile = () => {
                                 {translations.slice().reverse().map((t, idx) => (
                                     <div key={idx} className="flex gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
                                         <div className="flex-shrink-0 mt-1">
-                                            <div className="w-2 h-2 rounded-full bg-teal-400"></div>
+                                            <div className="w-2 h-2 rounded-full bg-brand-400"></div>
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-gray-900 font-medium truncate">{t.text}</p>
