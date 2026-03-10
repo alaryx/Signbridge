@@ -42,22 +42,13 @@ model = None
 device = None
 
 def load_model():
-    """Load YOLOv5 model on startup (from local repo)"""
+    """Load YOLOv5 model on startup using installed yolov5 package"""
     global model, device
     try:
         device = torch.device('cpu')
         logger.info(f"Using device: {device}")
 
         model_path = Path(__file__).parent / "models" / "best.pt"
-        yolov5_repo = Path(__file__).parent / "yolov5"
-
-        # ✅ Add yolov5 to sys.path BEFORE torch.load so models.yolo is found
-        if yolov5_repo.exists():
-            sys.path.insert(0, str(yolov5_repo))
-            logger.info(f"Using local YOLOv5 repo from {yolov5_repo}")
-        else:
-            logger.error("YOLOv5 repo not found!")
-            raise FileNotFoundError("YOLOv5 repo not found at expected path")
 
         if not model_path.exists():
             logger.error(f"Model not found at {model_path}")
@@ -65,20 +56,11 @@ def load_model():
 
         logger.info(f"Loading model from {model_path}...")
 
-        checkpoint = torch.load(str(model_path), map_location=device, weights_only=False)
-
-        if isinstance(checkpoint, dict) and 'model' in checkpoint:
-            model = checkpoint['model'].float().fuse().eval().to(device)
-        else:
-            model = checkpoint.float().fuse().eval().to(device)
-
+        # Use installed yolov5 pip package to load custom model
+        import yolov5
+        model = yolov5.load(str(model_path), device='cpu')
         model.conf = 0.5
         model.iou = 0.45
-
-        with torch.no_grad():
-            logger.info("Warming up model...")
-            dummy_image = torch.zeros((1, 3, 640, 640), device=device)
-            _ = model(dummy_image)
 
         logger.info(f"✅ Model loaded successfully on {device}")
         logger.info(f"📝 Detectable classes: {CLASS_NAMES}")
@@ -117,35 +99,15 @@ async def detect(file: UploadFile = File(...)):
         image_data = await file.read()
         image = Image.open(BytesIO(image_data)).convert('RGB')
 
-        # Resize to 640x640 as YOLOv5 expects
-        image_resized = image.resize((640, 640))
-        img_array = np.array(image_resized)
-
         logger.info(f"Processing image: {image.size}")
 
-        # Convert numpy HWC → tensor CHW, normalize, add batch dim
-        img_tensor = torch.from_numpy(img_array).permute(2, 0, 1).float() / 255.0
-        img_tensor = img_tensor.unsqueeze(0).to(device)  # (1, 3, 640, 640)
-
-        # YOLOv5 inference
-        with torch.no_grad():
-            results = model(img_tensor)
-
-        # Extract pred from tuple and apply NMS manually
-        from utils.general import non_max_suppression
-
-        pred = results[0] if isinstance(results, tuple) else results
-        pred = non_max_suppression(pred, conf_thres=0.5, iou_thres=0.45, max_det=10)
-        pred = pred[0]  # First image in batch
-
-        # Scale boxes back to original image size
-        orig_w, orig_h = image.size
-        scale_x = orig_w / 640
-        scale_y = orig_h / 640
+        # Use yolov5 package predict directly on PIL image
+        results = model(image, size=640)
+        predictions = results.pred[0]  # tensor of [x1,y1,x2,y2,conf,cls]
 
         detections = []
-        if pred is not None and len(pred) > 0:
-            for *xyxy, conf, cls in pred:
+        if predictions is not None and len(predictions) > 0:
+            for *xyxy, conf, cls in predictions:
                 class_id = int(cls)
                 class_name = CLASS_NAMES[class_id] if class_id < len(CLASS_NAMES) else "UNKNOWN"
 
@@ -154,10 +116,10 @@ async def detect(file: UploadFile = File(...)):
                     "class_id": class_id,
                     "confidence": float(conf),
                     "bbox": {
-                        "x1": float(xyxy[0]) * scale_x,
-                        "y1": float(xyxy[1]) * scale_y,
-                        "x2": float(xyxy[2]) * scale_x,
-                        "y2": float(xyxy[3]) * scale_y,
+                        "x1": float(xyxy[0]),
+                        "y1": float(xyxy[1]),
+                        "x2": float(xyxy[2]),
+                        "y2": float(xyxy[3]),
                     }
                 }
                 detections.append(detection)
