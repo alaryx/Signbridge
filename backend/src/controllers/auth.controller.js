@@ -1,9 +1,17 @@
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 exports.login = (req, res) => {
     const { email, password } = req.body;
+
     if (!email || !password) {
         return res.status(400).json({ status: 'error', message: 'Email and password required' });
     }
-    // Mock login success
+
+    // ✅ Validate email format
+    if (!EMAIL_REGEX.test(email)) {
+        return res.status(400).json({ status: 'error', message: 'Please provide a valid email address.' });
+    }
+
     const token = 'mock_jwt_token_12345';
     res.status(200).json({
         status: 'success',
@@ -14,6 +22,16 @@ exports.login = (req, res) => {
 
 exports.signup = (req, res) => {
     const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+        return res.status(400).json({ status: 'error', message: 'Name, email and password are required.' });
+    }
+
+    // ✅ Validate email format
+    if (!EMAIL_REGEX.test(email)) {
+        return res.status(400).json({ status: 'error', message: 'Please provide a valid email address.' });
+    }
+
     const token = 'mock_jwt_token_12345';
     res.status(201).json({
         status: 'success',

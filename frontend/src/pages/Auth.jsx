@@ -1,23 +1,59 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, LogIn, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, LogIn, ArrowRight, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
+const API_URL = 'http://localhost:5000/api/auth';
+
+// ✅ Strict regex: requires letters only in TLD, max 6 chars (blocks "xyzcommm")
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,6}$/;
 
 const Auth = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
 
-        // Basic validation and mock login
-        if (email && password) {
-            login({ email, name: isLogin ? 'User' : name });
-            navigate('/learn'); // Redirect to learn dashboard on successful login
+        // ✅ Validate email BEFORE calling the API
+        if (!EMAIL_REGEX.test(email)) {
+            setError('Please enter a valid email address (e.g. name@example.com)');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const endpoint = isLogin ? `${API_URL}/login` : `${API_URL}/signup`;
+            const body = isLogin ? { email, password } : { name, email, password };
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setError(data.message || 'Something went wrong. Please try again.');
+                return;
+            }
+
+            login(data.user);
+            navigate('/learn');
+
+        } catch (err) {
+            setError('Could not connect to the server. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -63,7 +99,9 @@ const Auth = () => {
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <Mail className="h-5 w-5 text-gray-400" />
                             </div>
-                            <input type="email" required
+                            {/* ✅ Changed type="email" to type="text" so browser doesn't
+                                override our stricter validation with its own lenient check */}
+                            <input type="text" required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="appearance-none rounded-xl relative block w-full pl-10 px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-500 focus:border-brand-500 focus:z-10 sm:text-sm transition-colors"
@@ -83,6 +121,14 @@ const Auth = () => {
                         </div>
                     </div>
 
+                    {/* ✅ Error message box */}
+                    {error && (
+                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
+                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            {error}
+                        </div>
+                    )}
+
                     {isLogin && (
                         <div className="flex items-center justify-between">
                             <div className="flex items-center">
@@ -97,15 +143,19 @@ const Auth = () => {
                         </div>
                     )}
 
-                    <button type="submit" className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors shadow-md">
-                        {isLogin ? 'Sign in' : 'Create Account'}
-                        <ArrowRight className="absolute right-4 h-5 w-5 text-brand-300 group-hover:translate-x-1 transition-transform" />
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        {loading ? 'Please wait...' : isLogin ? 'Sign in' : 'Create Account'}
+                        {!loading && <ArrowRight className="absolute right-4 h-5 w-5 text-brand-300 group-hover:translate-x-1 transition-transform" />}
                     </button>
                 </form>
 
                 <div className="text-center mt-4">
                     <button
-                        onClick={() => setIsLogin(!isLogin)}
+                        onClick={() => { setIsLogin(!isLogin); setError(''); }}
                         className="text-sm font-medium text-gray-600 hover:text-brand-600 transition-colors"
                     >
                         {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log in"}
