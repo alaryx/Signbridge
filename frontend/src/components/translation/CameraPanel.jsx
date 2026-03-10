@@ -20,9 +20,9 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
   useEffect(() => {
     const checkMLService = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/health", {
-          timeout: 2000,
-        });
+       const response = await axios.get(`${import.meta.env.VITE_ML_URL}/health`, {
+  timeout: 2000,
+});
         setModelStatus(response.data.model_loaded ? "ready" : "loading");
       } catch (err) {
         setModelStatus("offline");
@@ -162,45 +162,37 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
   }, [isActive, stopCamera]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Detection API call ───────────────────────────────────────────────────
+
   const captureAndDetect = async (canvas) => {
+  setLoading(true);  // ✅ move here
+  setError(null);
+  
+  canvas.toBlob(async (blob) => {
     try {
-      const frameData = canvas.toDataURL("image/jpeg", 0.7);
-      setLoading(true);
-      setError(null);
+      const formData = new FormData();
+      formData.append("file", blob, "frame.jpg");
 
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/translate/detect`,
-        { frame: frameData },
-        { timeout: 15000 },
+        `${import.meta.env.VITE_ML_URL}/detect`,
+        formData,
+        { 
+          timeout: 60000,
+          headers: { "Content-Type": "multipart/form-data" }
+        }
       );
-
-      const { detections: newDetections, classNames } = response.data;
+      const { detections: newDetections } = response.data;
       setDetections(newDetections);
-
       if (onDetection && newDetections.length > 0) {
         onDetection(newDetections);
       }
-
-      if (videoRef.current && canvas) {
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(videoRef.current, 0, 0);
-        drawBoundingBoxes(canvas, newDetections, classNames);
-      }
     } catch (error) {
-      if (error.code !== "ECONNABORTED") {
-        console.error("❌ Detection error:", error.message);
-        if (error.response?.status === 401) {
-          setError("Not authenticated. Please login first.");
-        } else if (error.response?.status === 503) {
-          setError("ML service offline. Check Python service.");
-        } else {
-          setError("Detection failed. Retrying...");
-        }
-      }
+      console.error("[Detection Error]", error.message);
+      setError("Detection failed. Retrying...");
     } finally {
-      setLoading(false);
+      setLoading(false);  // ✅ move here inside toBlob
     }
-  };
+  }, "image/jpeg", 0.7);
+};
 
   // ─── Draw bounding boxes ──────────────────────────────────────────────────
   const drawBoundingBoxes = (canvas, detections, classNames) => {
