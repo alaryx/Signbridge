@@ -6,8 +6,6 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const detectionIntervalRef = useRef(null);
-  // ✅ FIX 1: Store stream in a ref so cleanup always has access,
-  //    even if the component unmounts before the useEffect cleanup runs.
   const streamRef = useRef(null);
 
   const [detections, setDetections] = useState([]);
@@ -20,9 +18,9 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
   useEffect(() => {
     const checkMLService = async () => {
       try {
-       const response = await axios.get(`${import.meta.env.VITE_ML_URL}/health`, {
-  timeout: 2000,
-});
+        const response = await axios.get(`${import.meta.env.VITE_ML_URL}/health`, {
+          timeout: 5000,
+        });
         setModelStatus(response.data.model_loaded ? "ready" : "loading");
       } catch (err) {
         setModelStatus("offline");
@@ -37,40 +35,28 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
 
   // ─── Helper: stop all tracks and clear refs ───────────────────────────────
   const stopCamera = useCallback(() => {
-    // Cancel animation loop
     if (detectionIntervalRef.current) {
       cancelAnimationFrame(detectionIntervalRef.current);
       detectionIntervalRef.current = null;
     }
-
-    // Stop every media track via the stored ref
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
-
-    // Also clear the video element's srcObject in case it still holds a ref
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
       videoRef.current.srcObject = null;
     }
   }, []);
 
-  // ─── FIX 2: Always stop the camera when the component unmounts
-  //     (e.g. user navigates to a different route).
-  //     This runs regardless of the current value of isActive. ───────────────
   useEffect(() => {
     return () => {
       stopCamera();
     };
   }, [stopCamera]);
 
-  // ─── FIX 3: Camera lifecycle driven by isActive prop ─────────────────────
-  //    • isActive === false  →  stop immediately (no camera on page load)
-  //    • isActive === true   →  start camera + detection loop
   useEffect(() => {
     if (!isActive) {
-      // Stop whenever isActive becomes false (button pressed, parent sets false)
       stopCamera();
       setDetections([]);
       setError(null);
@@ -78,8 +64,7 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
       return;
     }
 
-    // ── Start camera ────────────────────────────────────────────────────────
-    let isMounted = true; // guard against async race on fast unmount
+    let isMounted = true;
 
     const startCamera = async () => {
       try {
@@ -93,19 +78,16 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
         });
 
         if (!isMounted) {
-          // Component already unmounted while we were awaiting — clean up immediately
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
 
-        // ✅ Store stream in ref before attaching to video
         streamRef.current = stream;
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
 
-        // ── Start render / detection loop ──────────────────────────────────
         let frameCount = 0;
         let lastFpsTime = Date.now();
         let lastDetectionTime = 0;
@@ -137,7 +119,7 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
             lastFpsTime = now;
           }
 
-          if (now - lastDetectionTime >= 2000) {
+          if (now - lastDetectionTime >= 3000) { // every 3 seconds
             lastDetectionTime = now;
             captureAndDetect(canvas);
           }
@@ -154,7 +136,6 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
 
     startCamera();
 
-    // Cleanup when isActive flips to false or component unmounts
     return () => {
       isMounted = false;
       stopCamera();
@@ -162,40 +143,54 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
   }, [isActive, stopCamera]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Detection API call ───────────────────────────────────────────────────
-
   const captureAndDetect = async (canvas) => {
-  setLoading(true);  // ✅ move here
-  setError(null);
-  
-  canvas.toBlob(async (blob) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", blob, "frame.jpg");
+    setLoading(true);
+    setError(null);
 
-      const response = await axios.post(
-        `${import.meta.env.VITE_ML_URL}/detect`,
-        formData,
-        { 
-          timeout: 60000,
-          headers: { "Content-Type": "multipart/form-data" }
+    canvas.toBlob(async (blob) => {
+      try {
+        const formData = new FormData();
+        formData.append("file", blob, "frame.jpg");
+
+        const response = await axios.post(
+          `${import.meta.env.VITE_ML_URL}/detect`,
+          formData,
+          {
+            timeout: 60000,
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+
+        const { detections: newDetections } = response.data;
+        console.log(`[Detection] Received ${newDetections.length} detections`);
+        setDetections(newDetections);
+
+        if (onDetection && newDetections.length > 0) {
+          onDetection(newDetections);
         }
-      );
-      const { detections: newDetections } = response.data;
-      setDetections(newDetections);
-      if (onDetection && newDetections.length > 0) {
-        onDetection(newDetections);
+
+        // ✅ Draw bounding boxes on canvas after detection
+        if (canvasRef.current && newDetections.length > 0) {
+          drawBoundingBoxes(canvasRef.current, newDetections);
+        }
+
+      } catch (error) {
+        console.error("[Detection Error]", error.message);
+        if (error.response?.status === 401) {
+          setError("Not authenticated. Please login first.");
+        } else if (error.response?.status === 503) {
+          setError("ML service offline.");
+        } else {
+          setError("Detection failed. Retrying...");
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("[Detection Error]", error.message);
-      setError("Detection failed. Retrying...");
-    } finally {
-      setLoading(false);  // ✅ move here inside toBlob
-    }
-  }, "image/jpeg", 0.7);
-};
+    }, "image/jpeg", 0.9); // ✅ higher quality
+  };
 
   // ─── Draw bounding boxes ──────────────────────────────────────────────────
-  const drawBoundingBoxes = (canvas, detections, classNames) => {
+  const drawBoundingBoxes = (canvas, detections) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -334,8 +329,7 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
         {modelStatus === "offline" && isActive && (
           <div className="self-center flex items-center gap-2 bg-red-500/20 backdrop-blur-md border border-red-500/40 text-red-300 px-4 py-2 rounded-full text-xs font-medium">
             <AlertCircle size={14} />
-            ML Service Offline — Run: python -m uvicorn ml-service.main:app
-            --port 8000
+            ML Service Offline
           </div>
         )}
 
