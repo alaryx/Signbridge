@@ -15,11 +15,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Signbridge ISL Detection API")
+import os
 
 # CORS Configuration - Allow Node.js backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5000", "http://127.0.0.1:5000", "http://localhost:5173"],
+    allow_origins=[
+        os.getenv("FRONTEND_URL", "http://localhost:5173"),
+        os.getenv("BACKEND_URL", "http://localhost:5000"),
+        "http://127.0.0.1:5000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

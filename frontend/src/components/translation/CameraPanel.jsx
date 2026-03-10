@@ -20,7 +20,9 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
   useEffect(() => {
     const checkMLService = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/health", { timeout: 2000 });
+        const response = await axios.get("http://localhost:8000/health", {
+          timeout: 2000,
+        });
         setModelStatus(response.data.model_loaded ? "ready" : "loading");
       } catch (err) {
         setModelStatus("offline");
@@ -82,7 +84,11 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
     const startCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: "user",
+          },
           audio: false,
         });
 
@@ -163,7 +169,7 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
       setError(null);
 
       const response = await axios.post(
-        "http://localhost:5000/api/translate/detect",
+        `${import.meta.env.VITE_API_URL}/api/translate/detect`,
         { frame: frameData },
         { timeout: 15000 },
       );
@@ -234,7 +240,9 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
       {/* Top Controls */}
       <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-start z-20 bg-gradient-to-b from-black/70 to-transparent">
         <div className="flex items-center gap-3">
-          <div className={`flex bg-black/50 backdrop-blur-md rounded-full px-3 py-1.5 items-center gap-2 ${isActive ? "text-red-400" : "text-gray-400"}`}>
+          <div
+            className={`flex bg-black/50 backdrop-blur-md rounded-full px-3 py-1.5 items-center gap-2 ${isActive ? "text-red-400" : "text-gray-400"}`}
+          >
             {isActive ? (
               <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
             ) : (
@@ -251,13 +259,21 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
             </div>
           )}
 
-          <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-            modelStatus === "ready"   ? "bg-green-500/20 text-green-300"
-            : modelStatus === "loading" ? "bg-yellow-500/20 text-yellow-300"
-            : "bg-red-500/20 text-red-300"
-          }`}>
+          <div
+            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+              modelStatus === "ready"
+                ? "bg-green-500/20 text-green-300"
+                : modelStatus === "loading"
+                  ? "bg-yellow-500/20 text-yellow-300"
+                  : "bg-red-500/20 text-red-300"
+            }`}
+          >
             <Wifi size={12} />
-            {modelStatus === "ready" ? "Model Ready" : modelStatus === "loading" ? "Loading..." : "Offline"}
+            {modelStatus === "ready"
+              ? "Model Ready"
+              : modelStatus === "loading"
+                ? "Loading..."
+                : "Offline"}
           </div>
         </div>
 
@@ -275,7 +291,12 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
               autoPlay
               playsInline
               muted
-              style={{ position: "absolute", width: "1px", height: "1px", opacity: 0 }}
+              style={{
+                position: "absolute",
+                width: "1px",
+                height: "1px",
+                opacity: 0,
+              }}
             />
             <canvas
               ref={canvasRef}
@@ -292,7 +313,8 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
 
             {detections.length > 0 && (
               <div className="absolute bottom-4 right-4 bg-green-500/90 text-white px-4 py-2 rounded-lg text-sm font-semibold">
-                ✓ {detections.length} {detections.length === 1 ? "Sign" : "Signs"} Detected
+                ✓ {detections.length}{" "}
+                {detections.length === 1 ? "Sign" : "Signs"} Detected
               </div>
             )}
 
@@ -308,7 +330,9 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
               <VideoOff size={32} className="text-gray-500" />
             </div>
             <p className="text-gray-400 font-medium text-lg">Camera Paused</p>
-            <p className="text-gray-500 text-sm">Click below to start detecting signs</p>
+            <p className="text-gray-500 text-sm">
+              Click below to start detecting signs
+            </p>
           </div>
         )}
       </div>
@@ -318,7 +342,8 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
         {modelStatus === "offline" && isActive && (
           <div className="self-center flex items-center gap-2 bg-red-500/20 backdrop-blur-md border border-red-500/40 text-red-300 px-4 py-2 rounded-full text-xs font-medium">
             <AlertCircle size={14} />
-            ML Service Offline — Run: python -m uvicorn ml-service.main:app --port 8000
+            ML Service Offline — Run: python -m uvicorn ml-service.main:app
+            --port 8000
           </div>
         )}
 
@@ -339,7 +364,11 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
             }`}
             title={isActive ? "Stop Camera" : "Start Camera"}
           >
-            {isActive ? <VideoOff size={24} className="text-white" /> : <Camera size={24} className="text-white" />}
+            {isActive ? (
+              <VideoOff size={24} className="text-white" />
+            ) : (
+              <Camera size={24} className="text-white" />
+            )}
           </button>
         </div>
       </div>
