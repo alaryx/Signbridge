@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Volume2, Play, CheckCircle2, Hand } from 'lucide-react';
 
 const ConversationStream = ({ messages }) => {
+    const bottomRef = useRef(null);
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
     return (
         <div className="flex-1 overflow-y-auto space-y-6 pr-4 pb-4 scroll-smooth">
             {messages.length === 0 ? (
@@ -62,6 +68,9 @@ const ConversationStream = ({ messages }) => {
                     );
                 })
             )}
+
+            {/* Invisible anchor — always scrolled into view on new message */}
+            <div ref={bottomRef} />
         </div>
     );
 };

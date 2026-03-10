@@ -25,8 +25,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Class names for ISL (5 classes)
-CLASS_NAMES = ['GOOD', 'HAPPY', 'INDIA', 'NAMASTE', 'THANK_YOU']
+# Class names for ISL (10 classes)
+CLASS_NAMES = ['GOOD', 'HAPPY', 'HELLO', 'HELP', 'INDIA', 'LOVE', 'NAMASTE', 'SORRY', 'THANK_YOU', 'WHAT']
 
 # Global model variable
 model = None
