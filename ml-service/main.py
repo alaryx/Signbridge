@@ -59,7 +59,7 @@ def load_model():
         # Use installed yolov5 pip package to load custom model
         import yolov5
         model = yolov5.load(str(model_path), device='cpu')
-        model.conf = 0.5
+        model.conf = 0.3  # was 0.5, lower = more sensitive
         model.iou = 0.45
 
         logger.info(f"✅ Model loaded successfully on {device}")
