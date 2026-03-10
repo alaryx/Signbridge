@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Camera, VideoOff, Maximize, AlertCircle, Wifi } from "lucide-react";
 import axios from "axios";
 
@@ -6,12 +6,17 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const detectionIntervalRef = useRef(null);
+  // ✅ FIX 1: Store stream in a ref so cleanup always has access,
+  //    even if the component unmounts before the useEffect cleanup runs.
+  const streamRef = useRef(null);
+
   const [detections, setDetections] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [fps, setFps] = useState(0);
   const [modelStatus, setModelStatus] = useState("checking");
 
+  // ─── ML service health check ──────────────────────────────────────────────
   useEffect(() => {
     const checkMLService = async () => {
       try {
@@ -28,8 +33,51 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
     return () => clearInterval(interval);
   }, []);
 
+  // ─── Helper: stop all tracks and clear refs ───────────────────────────────
+  const stopCamera = useCallback(() => {
+    // Cancel animation loop
+    if (detectionIntervalRef.current) {
+      cancelAnimationFrame(detectionIntervalRef.current);
+      detectionIntervalRef.current = null;
+    }
+
+    // Stop every media track via the stored ref
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    // Also clear the video element's srcObject in case it still holds a ref
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  // ─── FIX 2: Always stop the camera when the component unmounts
+  //     (e.g. user navigates to a different route).
+  //     This runs regardless of the current value of isActive. ───────────────
   useEffect(() => {
-    if (!isActive) return;
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
+
+  // ─── FIX 3: Camera lifecycle driven by isActive prop ─────────────────────
+  //    • isActive === false  →  stop immediately (no camera on page load)
+  //    • isActive === true   →  start camera + detection loop
+  useEffect(() => {
+    if (!isActive) {
+      // Stop whenever isActive becomes false (button pressed, parent sets false)
+      stopCamera();
+      setDetections([]);
+      setError(null);
+      setFps(0);
+      return;
+    }
+
+    // ── Start camera ────────────────────────────────────────────────────────
+    let isMounted = true; // guard against async race on fast unmount
 
     const startCamera = async () => {
       try {
@@ -37,9 +85,61 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
           video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
           audio: false,
         });
+
+        if (!isMounted) {
+          // Component already unmounted while we were awaiting — clean up immediately
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
+        // ✅ Store stream in ref before attaching to video
+        streamRef.current = stream;
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
+
+        // ── Start render / detection loop ──────────────────────────────────
+        let frameCount = 0;
+        let lastFpsTime = Date.now();
+        let lastDetectionTime = 0;
+
+        const detectFrame = () => {
+          if (!videoRef.current || !canvasRef.current) return;
+
+          const canvas = canvasRef.current;
+          const video = videoRef.current;
+
+          if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+            detectionIntervalRef.current = requestAnimationFrame(detectFrame);
+            return;
+          }
+
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          ctx.drawImage(video, 0, 0);
+
+          frameCount++;
+          const now = Date.now();
+          if (now - lastFpsTime >= 1000) {
+            setFps(frameCount);
+            frameCount = 0;
+            lastFpsTime = now;
+          }
+
+          if (now - lastDetectionTime >= 2000) {
+            lastDetectionTime = now;
+            captureAndDetect(canvas);
+          }
+
+          detectionIntervalRef.current = requestAnimationFrame(detectFrame);
+        };
+
+        detectionIntervalRef.current = requestAnimationFrame(detectFrame);
       } catch (err) {
         console.error("❌ Camera error:", err);
         setError("Camera access denied. Please enable camera permissions.");
@@ -48,55 +148,14 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
 
     startCamera();
 
-    let frameCount = 0;
-    let lastFpsTime = Date.now();
-    let lastDetectionTime = 0;
-
-    const detectFrame = () => {
-      if (!videoRef.current || !canvasRef.current) return;
-
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-
-      if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-        detectionIntervalRef.current = requestAnimationFrame(detectFrame);
-        return;
-      }
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      ctx.drawImage(video, 0, 0);
-
-      frameCount++;
-      const now = Date.now();
-      if (now - lastFpsTime >= 1000) {
-        setFps(frameCount);
-        frameCount = 0;
-        lastFpsTime = now;
-      }
-
-      if (now - lastDetectionTime >= 2000) {
-        lastDetectionTime = now;
-        captureAndDetect(canvas);
-      }
-
-      detectionIntervalRef.current = requestAnimationFrame(detectFrame);
-    };
-
-    detectionIntervalRef.current = requestAnimationFrame(detectFrame);
-
+    // Cleanup when isActive flips to false or component unmounts
     return () => {
-      if (detectionIntervalRef.current) cancelAnimationFrame(detectionIntervalRef.current);
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-      }
+      isMounted = false;
+      stopCamera();
     };
-  }, [isActive]);
+  }, [isActive, stopCamera]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ─── Detection API call ───────────────────────────────────────────────────
   const captureAndDetect = async (canvas) => {
     try {
       const frameData = canvas.toDataURL("image/jpeg", 0.7);
@@ -112,7 +171,6 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
       const { detections: newDetections, classNames } = response.data;
       setDetections(newDetections);
 
-      // ✅ Notify parent with detected signs
       if (onDetection && newDetections.length > 0) {
         onDetection(newDetections);
       }
@@ -138,6 +196,7 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
     }
   };
 
+  // ─── Draw bounding boxes ──────────────────────────────────────────────────
   const drawBoundingBoxes = (canvas, detections, classNames) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -169,6 +228,7 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
     });
   };
 
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="flex-1 flex flex-col w-full h-full relative group rounded-2xl overflow-hidden bg-gray-900 border-2 border-gray-200 shadow-lg transition-all duration-300">
       {/* Top Controls */}
@@ -191,10 +251,11 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
             </div>
           )}
 
-          <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${modelStatus === "ready" ? "bg-green-500/20 text-green-300"
-              : modelStatus === "loading" ? "bg-yellow-500/20 text-yellow-300"
-                : "bg-red-500/20 text-red-300"
-            }`}>
+          <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+            modelStatus === "ready"   ? "bg-green-500/20 text-green-300"
+            : modelStatus === "loading" ? "bg-yellow-500/20 text-yellow-300"
+            : "bg-red-500/20 text-red-300"
+          }`}>
             <Wifi size={12} />
             {modelStatus === "ready" ? "Model Ready" : modelStatus === "loading" ? "Loading..." : "Offline"}
           </div>
@@ -214,12 +275,12 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
               autoPlay
               playsInline
               muted
-              style={{ position: 'absolute', width: '1px', height: '1px', opacity: 0 }}
+              style={{ position: "absolute", width: "1px", height: "1px", opacity: 0 }}
             />
             <canvas
               ref={canvasRef}
               className="w-full h-full object-cover"
-              style={{ display: 'block', minHeight: '200px' }}
+              style={{ display: "block", minHeight: "200px" }}
             />
 
             {error && (
@@ -257,7 +318,7 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
         {modelStatus === "offline" && isActive && (
           <div className="self-center flex items-center gap-2 bg-red-500/20 backdrop-blur-md border border-red-500/40 text-red-300 px-4 py-2 rounded-full text-xs font-medium">
             <AlertCircle size={14} />
-            ML Service Offline - Run: python -m uvicorn ml-service.main:app --port 8000
+            ML Service Offline — Run: python -m uvicorn ml-service.main:app --port 8000
           </div>
         )}
 
@@ -271,10 +332,11 @@ const CameraPanel = ({ isActive, onToggle, onDetection }) => {
         <div className="flex justify-center items-center gap-6">
           <button
             onClick={onToggle}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 ${isActive
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-110 active:scale-95 ${
+              isActive
                 ? "bg-red-500 hover:bg-red-600 focus:ring-4 focus:ring-red-500/30"
                 : "bg-brand-500 hover:bg-brand-600 focus:ring-4 focus:ring-brand-500/30"
-              }`}
+            }`}
             title={isActive ? "Stop Camera" : "Start Camera"}
           >
             {isActive ? <VideoOff size={24} className="text-white" /> : <Camera size={24} className="text-white" />}

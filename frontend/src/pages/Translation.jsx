@@ -10,14 +10,23 @@ const NODE_API_URL = 'http://localhost:5000/api/translate';
 const Translation = () => {
     const { user, updateUser } = useAuth();
     const [mode, setMode] = useState('sign_to_text');
-    const [isCameraActive, setIsCameraActive] = useState(true);
+    const [isCameraActive, setIsCameraActive] = useState(false); // ✅ FIX: was `true`, camera now starts only when user clicks button
     const [textInput, setTextInput] = useState('');
     const [messages, setMessages] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [sequence, setSequence] = useState(null);
     const [error, setError] = useState('');
 
-    const toggleCamera = () => setIsCameraActive(!isCameraActive);
+    // ✅ FIX: Also turn camera OFF when switching to text_to_sign mode,
+    //    so the stream doesn't stay alive in the background.
+    const handleModeSwitch = (newMode) => {
+        if (newMode === 'text_to_sign') {
+            setIsCameraActive(false); // stop camera when leaving sign_to_text
+        }
+        setMode(newMode);
+    };
+
+    const toggleCamera = () => setIsCameraActive(prev => !prev);
 
     // ✅ Called by CameraPanel when a sign is detected
     const handleSignDetected = (detections) => {
@@ -40,7 +49,6 @@ const Translation = () => {
         setError('');
         setSequence(null);
 
-        // Append to conversation history
         const newMsg = {
             id: Date.now(),
             direction: 'text_to_sign',
@@ -57,7 +65,6 @@ const Translation = () => {
             });
         }
 
-        // Fetch ISL video sequence from Node/MongoDB API
         try {
             const response = await fetch(NODE_API_URL, {
                 method: 'POST',
@@ -87,7 +94,7 @@ const Translation = () => {
             {/* Mode Selector Tabs */}
             <div className="flex items-center justify-center gap-2 p-4 bg-white border-b border-gray-100 shadow-sm">
                 <button
-                    onClick={() => setMode('sign_to_text')}
+                    onClick={() => handleModeSwitch('sign_to_text')} // ✅ use handleModeSwitch
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${mode === 'sign_to_text'
                         ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/30 scale-105'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -100,7 +107,7 @@ const Translation = () => {
                 <ArrowRight size={20} className="text-gray-300 mx-1" />
 
                 <button
-                    onClick={() => setMode('text_to_sign')}
+                    onClick={() => handleModeSwitch('text_to_sign')} // ✅ use handleModeSwitch
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${mode === 'text_to_sign'
                         ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/30 scale-105'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -117,9 +124,7 @@ const Translation = () => {
                 {/* === SIGN TO TEXT MODE === */}
                 {mode === 'sign_to_text' && (
                     <>
-                        {/* Camera Panel */}
                         <div className="w-full lg:w-1/2 h-1/2 lg:h-full flex flex-col p-4 border-r border-gray-200">
-                            {/* ✅ Pass onDetection callback */}
                             <CameraPanel
                                 isActive={isCameraActive}
                                 onToggle={toggleCamera}
@@ -127,7 +132,6 @@ const Translation = () => {
                             />
                         </div>
 
-                        {/* Conversation Output */}
                         <div className="w-full lg:w-1/2 h-1/2 lg:h-full flex flex-col p-4 bg-white relative">
                             <div className="mb-3">
                                 <h2 className="text-lg font-bold text-gray-800">Recognized Text</h2>
@@ -141,7 +145,6 @@ const Translation = () => {
                 {/* === TEXT TO SIGN MODE === */}
                 {mode === 'text_to_sign' && (
                     <>
-                        {/* Text Input Area */}
                         <div className="w-full lg:w-1/2 h-1/2 lg:h-full flex flex-col p-6 border-r border-gray-200 bg-white">
                             <div className="mb-4">
                                 <h2 className="text-lg font-bold text-gray-800">Enter Text</h2>
@@ -163,7 +166,6 @@ const Translation = () => {
                             </button>
                         </div>
 
-                        {/* ISL Video Output */}
                         <div className="w-full lg:w-1/2 h-1/2 lg:h-full flex flex-col p-4 bg-gray-50 overflow-y-auto">
                             {isLoading && (
                                 <div className="flex-1 flex flex-col items-center justify-center gap-3 text-brand-600">
