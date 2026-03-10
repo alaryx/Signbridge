@@ -1,6 +1,7 @@
 import logging
 import sys
-import pickle
+import pathlib
+import os
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,23 +9,26 @@ import torch
 import numpy as np
 from io import BytesIO
 from PIL import Image
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
+
+# Fix: map WindowsPath to PosixPath (model saved on Windows, running on Linux)
+pathlib.WindowsPath = pathlib.PosixPath
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Signbridge ISL Detection API")
-import os
 
-# CORS Configuration - Allow Node.js backend
+allowed_origins = [
+    os.getenv("FRONTEND_URL", "http://localhost:5173"),
+    os.getenv("BACKEND_URL", "http://localhost:5000"),
+    "http://127.0.0.1:5000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        os.getenv("FRONTEND_URL", "http://localhost:5173"),
-        os.getenv("BACKEND_URL", "http://localhost:5000"),
-        "http://127.0.0.1:5000",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,7 +44,6 @@ device = None
 def load_model():
     """Load YOLOv5 model on startup (from local repo)"""
     global model, device
-    import pathlib
     try:
         device = torch.device('cpu')
         logger.info(f"Using device: {device}")
@@ -52,8 +55,6 @@ def load_model():
             raise FileNotFoundError(f"Model file not found: {model_path}")
 
         logger.info(f"Loading model from {model_path}...")
-
-        pathlib.PosixPath = pathlib.WindowsPath
 
         yolov5_repo = Path(__file__).parent / "yolov5"
 
@@ -93,8 +94,6 @@ def load_model():
         import traceback
         traceback.print_exc()
         raise
-    finally:
-        pathlib.PosixPath = pathlib.PurePosixPath
 
 
 @app.on_event("startup")
@@ -137,7 +136,7 @@ async def detect(file: UploadFile = File(...)):
         with torch.no_grad():
             results = model(img_tensor)
 
-        # ✅ Extract pred from tuple and apply NMS manually
+        # Extract pred from tuple and apply NMS manually
         from utils.general import non_max_suppression
 
         pred = results[0] if isinstance(results, tuple) else results
@@ -199,4 +198,4 @@ async def get_classes():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)), log_level="info")
