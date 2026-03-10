@@ -49,6 +49,15 @@ def load_model():
         logger.info(f"Using device: {device}")
 
         model_path = Path(__file__).parent / "models" / "best.pt"
+        yolov5_repo = Path(__file__).parent / "yolov5"
+
+        # ✅ Add yolov5 to sys.path BEFORE torch.load so models.yolo is found
+        if yolov5_repo.exists():
+            sys.path.insert(0, str(yolov5_repo))
+            logger.info(f"Using local YOLOv5 repo from {yolov5_repo}")
+        else:
+            logger.error("YOLOv5 repo not found!")
+            raise FileNotFoundError("YOLOv5 repo not found at expected path")
 
         if not model_path.exists():
             logger.error(f"Model not found at {model_path}")
@@ -56,26 +65,12 @@ def load_model():
 
         logger.info(f"Loading model from {model_path}...")
 
-        yolov5_repo = Path(__file__).parent / "yolov5"
+        checkpoint = torch.load(str(model_path), map_location=device, weights_only=False)
 
-        if yolov5_repo.exists():
-            sys.path.insert(0, str(yolov5_repo))
-            logger.info(f"Using local YOLOv5 repo from {yolov5_repo}")
-
-            checkpoint = torch.load(str(model_path), map_location=device, weights_only=False)
-
-            if isinstance(checkpoint, dict) and 'model' in checkpoint:
-                model = checkpoint['model'].float().fuse().eval().to(device)
-            else:
-                model = checkpoint.float().fuse().eval().to(device)
+        if isinstance(checkpoint, dict) and 'model' in checkpoint:
+            model = checkpoint['model'].float().fuse().eval().to(device)
         else:
-            logger.info("Local YOLOv5 repo not found, using direct loading...")
-            checkpoint = torch.load(str(model_path), map_location=device, weights_only=False)
-
-            if isinstance(checkpoint, dict) and 'model' in checkpoint:
-                model = checkpoint['model'].float().eval().to(device)
-            else:
-                model = checkpoint.float().eval().to(device)
+            model = checkpoint.float().fuse().eval().to(device)
 
         model.conf = 0.5
         model.iou = 0.45
