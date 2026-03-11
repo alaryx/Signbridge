@@ -5,7 +5,6 @@ import { useAuth } from "../context/AuthContext";
 
 const API_URL = `${import.meta.env.VITE_API_URL}/api/auth`;
 
-// ✅ Strict regex: requires letters only in TLD, max 6 chars (blocks "xyzcommm")
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,6}$/;
 
 const Auth = () => {
@@ -22,7 +21,6 @@ const Auth = () => {
     e.preventDefault();
     setError("");
 
-    // ✅ Validate email BEFORE calling the API
     if (!EMAIL_REGEX.test(email)) {
       setError("Please enter a valid email address (e.g. name@example.com)");
       return;
@@ -100,8 +98,6 @@ const Auth = () => {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail className="h-5 w-5 text-gray-400" />
               </div>
-              {/* ✅ Changed type="email" to type="text" so browser doesn't
-                                override our stricter validation with its own lenient check */}
               <input
                 type="text"
                 required
@@ -126,7 +122,6 @@ const Auth = () => {
             </div>
           </div>
 
-          {/* ✅ Error message box */}
           {error && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
               <AlertCircle className="h-4 w-4 shrink-0" />
@@ -143,18 +138,12 @@ const Auth = () => {
                   type="checkbox"
                   className="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
                 />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-900"
-                >
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                   Remember me
                 </label>
               </div>
               <div className="text-sm">
-                <a
-                  href="#"
-                  className="font-medium text-brand-600 hover:text-brand-500"
-                >
+                <a href="#" className="font-medium text-brand-600 hover:text-brand-500">
                   Forgot your password?
                 </a>
               </div>
@@ -166,11 +155,7 @@ const Auth = () => {
             disabled={loading}
             className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading
-              ? "Please wait..."
-              : isLogin
-                ? "Sign in"
-                : "Create Account"}
+            {loading ? "Please wait..." : isLogin ? "Sign in" : "Create Account"}
             {!loading && (
               <ArrowRight className="absolute right-4 h-5 w-5 text-brand-300 group-hover:translate-x-1 transition-transform" />
             )}
@@ -179,32 +164,10 @@ const Auth = () => {
 
         <div className="text-center mt-4">
           <button
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError("");
-            }}
+            onClick={() => { setIsLogin(!isLogin); setError(""); }}
             className="text-sm font-medium text-gray-600 hover:text-brand-600 transition-colors"
           >
-            {isLogin
-              ? "Don't have an account? Sign up"
-              : "Already have an account? Log in"}
-          </button>
-        </div>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">
-                Or continue as
-              </span>
-            </div>
-          </div>
-
-          <button className="mt-6 w-full flex justify-center py-3 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors">
-            Guest User (Limited Access)
+            {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log in"}
           </button>
         </div>
       </div>
