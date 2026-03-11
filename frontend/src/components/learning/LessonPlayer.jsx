@@ -59,6 +59,15 @@ const LessonPlayer = ({ lesson, onBack, onComplete }) => {
         }
     }, [stream, mode]);
 
+    // ── Auto-evaluate 4 seconds after stream starts ───────────────────────────
+    useEffect(() => {
+        if (!stream) return;
+        const timer = setTimeout(() => {
+            evaluateSign();
+        }, 4000);
+        return () => clearTimeout(timer);
+    }, [stream]); // eslint-disable-line react-hooks/exhaustive-deps
+
     const stopCamera = () => {
         if (stream) {
             stream.getTracks().forEach(t => t.stop());
@@ -334,12 +343,10 @@ const LessonPlayer = ({ lesson, onBack, onComplete }) => {
                                     </div>
 
                                     {mode === 'practice' && stream && (
-                                        <button
-                                            onClick={evaluateSign}
-                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 px-8 rounded-2xl shadow-xl hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3"
-                                        >
-                                            <Camera size={20} /> Evaluate Accuracy
-                                        </button>
+                                        <div className="w-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold py-4 px-8 rounded-2xl flex items-center justify-center gap-3 text-sm">
+                                            <Loader2 size={18} className="animate-spin" />
+                                            Evaluating in a moment… hold your sign steady
+                                        </div>
                                     )}
                                 </div>
                             )}
