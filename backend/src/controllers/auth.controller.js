@@ -104,6 +104,17 @@ exports.signup = async (req, res) => {
         });
 
         if (user) {
+            // Calculate dynamic level even for new users - WRAPPED in separate try-catch
+            try {
+                const allCourses = await Course.find().sort({ order: 1 });
+                if (allCourses.length > 0) {
+                    user.level = allCourses[0].title;
+                    await user.save();
+                }
+            } catch (levelErr) {
+                console.error('Non-blocking error during signup level calculation:', levelErr.message);
+            }
+
             res.status(201).json({
                 status: 'success',
                 token: generateToken(user._id),
@@ -125,6 +136,7 @@ exports.signup = async (req, res) => {
             res.status(400).json({ status: 'error', message: 'Invalid user data received.' });
         }
     } catch (error) {
-        res.status(500).json({ status: 'error', message: 'Server error during signup.' });
+        console.error('FATAL SIGNUP ERROR:', error);
+        res.status(500).json({ status: 'error', message: 'Server error during signup. Please contact support.', debug: error.message });
     }
 };
