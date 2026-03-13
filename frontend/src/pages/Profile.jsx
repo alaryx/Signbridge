@@ -54,7 +54,7 @@ const Profile = () => {
                                 </div>
                             </div>
 
-                            <div className="mt-16">
+                            <div className="mt-20">
                                 <h1 className="text-2xl font-black text-gray-900">{user.name}</h1>
                                 <div className="flex items-center justify-center gap-2 text-gray-500 mt-1">
                                     <Mail size={16} />
@@ -67,12 +67,7 @@ const Profile = () => {
                             </div>
 
                             <div className="mt-8 pt-6 border-t border-gray-100 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-500 font-medium text-sm">Learning Rank</span>
-                                    <span className="bg-brand-50 text-brand-700 px-3 py-1 rounded-full text-sm font-bold border border-brand-100">
-                                        {level}
-                                    </span>
-                                </div>
+                               
                             </div>
 
                             <div className="mt-8 pt-6 border-t border-gray-100">
