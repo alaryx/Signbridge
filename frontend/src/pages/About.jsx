@@ -7,7 +7,7 @@ const teamMembers = [
     { name: 'Samridhi Arora',    role: 'Team Leader',  initials: 'SA', bg: '#EFF6FF', color: '#1D4ED8' },
     { name: 'Khushal Sharma',    role: 'Team Member',  initials: 'KS', bg: '#EFF6FF', color: '#2563EB' },
     { name: 'Anzel Gupta',       role: 'Team Member',  initials: 'AG', bg: '#EFF6FF', color: '#3B82F6' },
-    { name: 'Himanshu Goutam',   role: 'Team Member',  initials: 'HG', bg: '#EFF6FF', color: '#1E40AF' },
+    { name: 'Himanshu Gautam',   role: 'Team Member',  initials: 'HG', bg: '#EFF6FF', color: '#1E40AF' },
     { name: 'Aditya Kumar Singh',role: 'Team Member',  initials: 'AK', bg: '#EFF6FF', color: '#1D4ED8' },
 ];
 
