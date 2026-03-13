@@ -30,22 +30,27 @@ exports.login = async (req, res) => {
             user.lastLogin = Date.now();
             await user.save();
 
-            // Calculate dynamic level for immediate accurate UI
-            const allCourses = await Course.find().sort({ order: 1 });
-            if (allCourses.length > 0) {
-                const allLessons = await Lesson.find({});
-                const completedIds = user.completedLessons.map(id => id.toString());
-                const currentCourse = allCourses.find(course => {
-                    const courseLessons = allLessons.filter(l => l.courseId.toString() === course._id.toString());
-                    return !courseLessons.every(l => completedIds.includes(l._id.toString()));
-                });
-                if (currentCourse && user.level !== currentCourse.title) {
-                    user.level = currentCourse.title;
-                    await user.save();
-                } else if (!currentCourse && user.level !== allCourses[allCourses.length - 1].title) {
-                    user.level = allCourses[allCourses.length - 1].title;
-                    await user.save();
+            // Calculate dynamic level for immediate accurate UI - WRAPPED in separate try-catch to not block login
+            try {
+                const allCourses = await Course.find().sort({ order: 1 });
+                if (allCourses.length > 0) {
+                    const allLessons = await Lesson.find({});
+                    const completedIds = user.completedLessons.map(id => id.toString());
+                    const currentCourse = allCourses.find(course => {
+                        const courseLessons = allLessons.filter(l => l.courseId.toString() === course._id.toString());
+                        return !courseLessons.every(l => completedIds.includes(l._id.toString()));
+                    });
+                    if (currentCourse && user.level !== currentCourse.title) {
+                        user.level = currentCourse.title;
+                        await user.save();
+                    } else if (!currentCourse && user.level !== allCourses[allCourses.length - 1].title) {
+                        user.level = allCourses[allCourses.length - 1].title;
+                        await user.save();
+                    }
                 }
+            } catch (levelErr) {
+                console.error('Non-blocking error during login level calculation:', levelErr.message);
+                // Level calculation failure shouldn't prevent login
             }
 
             res.status(200).json({
@@ -69,7 +74,8 @@ exports.login = async (req, res) => {
             res.status(401).json({ status: 'error', message: 'Invalid email or password.' });
         }
     } catch (error) {
-        res.status(500).json({ status: 'error', message: 'Server error during login.' });
+        console.error('FATAL LOGIN ERROR:', error);
+        res.status(500).json({ status: 'error', message: 'Server error during login. Please contact support.', debug: error.message });
     }
 };
 
