@@ -77,10 +77,7 @@ const About = () => {
                         </ul>
                     </div>
 
-                    <div className="rounded-2xl flex items-center justify-center min-h-[340px] border-2 border-dashed border-blue-200"
-                        style={{ backgroundColor: '#EFF6FF' }}>
-                        <p className="text-blue-300 font-medium text-sm">[ Descriptive Infographic Placeholder ]</p>
-                    </div>
+                   
                 </section>
 
                 {/* Team */}
@@ -118,13 +115,16 @@ const About = () => {
                             </div>
                         ))}
                     </div>
-
-                    <button className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl border transition-colors"
-                        style={{ color: '#2563EB', borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#DBEAFE'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#EFF6FF'}>
-                        Read Technical Documentation <ExternalLink size={15} />
-                    </button>
+                   <a
+                   href="https://github.com/alaryx/Signbridge"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-xl border transition-colors"
+                    style={{ color: '#2563EB', borderColor: '#BFDBFE', backgroundColor: '#EFF6FF' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#DBEAFE'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = '#EFF6FF'}>
+                    Read Technical Documentation <ExternalLink size={15} />
+                </a>
                 </section>
 
             </div>
