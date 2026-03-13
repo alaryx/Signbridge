@@ -14,7 +14,7 @@ export default function ModuleTest({ module, onPass, onFail, onCancel }) {
             <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-12">
                 <div className="flex flex-col items-center justify-center p-12 bg-gray-50 rounded-3xl shadow-sm border border-gray-100 min-h-[50vh] max-w-lg w-full text-center">
                     <h3 className="text-xl font-bold text-gray-900 mb-2">No Test Available</h3>
-                    <p className="text-gray-500 mb-6">This module doesn't have an active test yet.</p>
+                    <p className="text-gray-500 mb-6">This course needs at least 3 lessons to generate a test. Add more lessons and try again.</p>
                     <button
                         onClick={onCancel}
                         className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors shadow-md"
@@ -106,22 +106,40 @@ export default function ModuleTest({ module, onPass, onFail, onCancel }) {
     const renderVideoToText = () => (
         <div className="flex flex-col items-center w-full max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
             <div className="w-full bg-black aspect-video rounded-2xl overflow-hidden shadow-md flex items-center justify-center relative">
-                <video
-                    src={currentQuestion.videoUrl}
-                    className="w-full h-full object-contain"
-                    controls
-                    autoPlay
-                    muted
-                    loop
-                    onError={(e) => {
-                        e.target.parentElement.innerHTML = `
-                            <div class="flex flex-col items-center justify-center text-gray-500 p-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2 text-red-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                <p class="font-bold">Video Unavailable</p>
-                            </div>
-                        `;
-                    }}
-                />
+                {currentQuestion.mediaType === 'image' ? (
+                    <img
+                        src={currentQuestion.videoUrl}
+                        alt="Sign language sign"
+                        className="w-full h-full object-contain"
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                            e.target.parentElement.innerHTML = `
+                                <div class="flex flex-col items-center justify-center text-gray-500 p-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2 text-red-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    <p class="font-bold">Image Unavailable</p>
+                                </div>
+                            `;
+                        }}
+                    />
+                ) : (
+                    <video
+                        src={currentQuestion.videoUrl}
+                        className="w-full h-full object-contain"
+                        controls
+                        autoPlay
+                        muted
+                        loop
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                            e.target.parentElement.innerHTML = `
+                                <div class="flex flex-col items-center justify-center text-gray-500 p-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2 text-red-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    <p class="font-bold">Video Unavailable</p>
+                                </div>
+                            `;
+                        }}
+                    />
+                )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                 {currentQuestion.options.map(opt => (
@@ -153,29 +171,47 @@ export default function ModuleTest({ module, onPass, onFail, onCancel }) {
                             : 'border-transparent shadow-md hover:border-indigo-300'
                             }`}
                     >
-                        <video
-                            src={opt.videoUrl}
-                            className="w-full aspect-square object-cover bg-black"
-                            muted
-                            loop
-                            onMouseEnter={e => e.target.play()}
-                            onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }}
-                            onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.parentElement.innerHTML += `
-                                    <div class="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                    </div>
-                                `;
-                            }}
-                        />
+                        {(opt.mediaType === 'image') ? (
+                            <img
+                                src={opt.videoUrl}
+                                alt="Sign option"
+                                className="w-full aspect-square object-cover bg-gray-100"
+                                crossOrigin="anonymous"
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.parentElement.innerHTML += `
+                                        <div class="absolute inset-0 flex flex-col items-center justify-center text-gray-600 bg-gray-100">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                        </div>
+                                    `;
+                                }}
+                            />
+                        ) : (
+                            <video
+                                src={opt.videoUrl}
+                                className="w-full aspect-square object-cover bg-black"
+                                muted
+                                loop
+                                crossOrigin="anonymous"
+                                onMouseEnter={e => e.target.play()}
+                                onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }}
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.parentElement.innerHTML += `
+                                        <div class="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                        </div>
+                                    `;
+                                }}
+                            />
+                        )}
                         {answers[currentQuestion.id] === opt.id && (
                             <div className="absolute top-2 right-2 bg-indigo-600 text-white rounded-full p-1 shadow-sm">
                                 <CheckCircle size={20} />
                             </div>
                         )}
                         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm whitespace-nowrap opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
-                            Hover to play
+                            {(opt.mediaType === 'image') ? 'Click to select' : 'Hover to play'}
                         </div>
                     </div>
                 ))}

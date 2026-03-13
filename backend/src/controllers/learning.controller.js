@@ -179,10 +179,28 @@ exports.completeAssessment = async (req, res) => {
         const user = await User.findById(req.user._id);
         if (!user) return res.status(404).json({ status: 'error', message: 'User not found' });
 
+        const { finalCourseLevel, completedLessonIds = [] } = req.body;
         user.assessmentCompleted = true;
+        
+        if (finalCourseLevel) user.level = finalCourseLevel;
+        
+        // Add unique lesson IDs from placement
+        if (completedLessonIds.length > 0) {
+            const currentIds = user.completedLessons.map(id => id.toString());
+            completedLessonIds.forEach(id => {
+                if (!currentIds.includes(id)) {
+                    user.completedLessons.push(id);
+                }
+            });
+        }
+
         await user.save();
 
-        res.status(200).json({ status: 'success', message: 'Assessment marked as completed.' });
+        res.status(200).json({ 
+            status: 'success', 
+            message: 'Assessment and placement finalized.',
+            data: { level: user.level, completedCount: user.completedLessons.length }
+        });
     } catch (error) {
         res.status(500).json({ status: 'error', message: 'Error completing assessment', error: error.message });
     }

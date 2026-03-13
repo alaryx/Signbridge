@@ -22,12 +22,13 @@ const AssessmentFlow = ({ onComplete }) => {
 
         // Check if we hit an early "finish" based on evaluation failure
         if (nextId === 'finish') {
-            const finalLevel = generateFinalPlacement();
+            const finalAnswers = [...answersLog, { qId: currentQuestionId, selected: selectedOption }];
+            const finalLevel = generateFinalPlacement(finalAnswers);
 
             // Finish Assessment
             onComplete({
                 level: finalLevel,
-                path: ['The Continuous Course']
+                path: ['Standard Path']
             });
             return;
         }

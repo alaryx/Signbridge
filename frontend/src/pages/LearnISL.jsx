@@ -17,7 +17,7 @@ import DailyGoalHeader from "../components/learning/DailyGoalHeader";
 import ModuleTest from "../components/learning/ModuleTest";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { coursePaths as mockCourses } from "../api/mockCourses";
+import { getNextPlacementStep, generateQuizFromLessons, LEVELS } from "../utils/placementLogic";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -29,9 +29,14 @@ const LearnISL = () => {
   const [assessmentState, setAssessmentState] = useState(
     user?.assessmentCompleted ? "completed" : "pending",
   );
+
+  console.log("REACT RENDER PASS: assessmentState=", assessmentState);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [completedCoursePopup, setCompletedCoursePopup] = useState(null);
   const [activeTest, setActiveTest] = useState(null);
+  const [placementRec, setPlacementRec] = useState(null); // beginner, intermediate, advanced
+  const [placementTestCourse, setPlacementTestCourse] = useState(null);
+  const [isPlacementMode, setIsPlacementMode] = useState(false);
 
   // Derive userProfile from the auth context user (server-sourced)
   const userProfile = {
@@ -64,78 +69,131 @@ const LearnISL = () => {
 
   const fetchCurriculum = async () => {
     try {
-      const res = await fetch(
-        `${API_URL}/api/learning/curriculum`,
-      );
+      const res = await fetch(`${API_URL}/api/learning/curriculum`);
       const data = await res.json();
       if (data.status === "success" && data.data.length > 0) {
-        // Merge in the quiz data from mockCourses, since the DB doesn't have it yet
-        const mockLevels = Object.values(mockCourses);
-
-        const mergedCourses = data.data.map((course, cIdx) => {
-          const mockCourse = mockLevels[cIdx];
-          if (!mockCourse) return course;
-
-          return {
-            ...course,
-            finalTest: mockCourse.finalTest || null,
-          };
-        });
-
-        setCourses(mergedCourses);
-      } else {
-        loadMockFallback();
+        setCourses(data.data);
       }
     } catch (error) {
-      console.error(
-        "Error fetching live curriculum, falling back to mock data:",
-        error,
-      );
-      loadMockFallback();
+      console.error("Error fetching curriculum:", error);
     } finally {
       setLoadingCurriculum(false);
     }
-  };
-
-  const loadMockFallback = () => {
-    const mockArray = Object.values(mockCourses).map((course, index) => ({
-      _id: `mock-course-${index}`,
-      title: `Level ${index + 1}`,
-      description: course.description,
-      lessons: course.lessons,
-      finalTest: course.finalTest || null,
-    }));
-    setCourses(mockArray);
   };
 
   const handleStartAssessment = () => {
     setAssessmentState("started");
   };
 
-  const handleCompleteAssessment = async () => {
-    updateUser({ level: "Level 1", assessmentCompleted: true });
+  const handleCompleteAssessment = (result) => {
+    setPlacementRec(result?.level || 'Daily Conversations (Beginner)');
+    updateUser({ assessmentCompleted: true });
     setAssessmentState("result");
+  };
 
-    // Persist to backend
-    try {
-      const token = localStorage.getItem('signbridge_token');
-      if (token) {
-        await fetch(`${API_URL}/api/learning/me/assessment-complete`, {
+  const executePlacementStep = (step) => {
+    console.log("executePlacementStep TRACE:", step);
+    if (step.finalPlacement) {
+      console.log("Executing final placement...", step.finalPlacement);
+      handleFinalPlacement(step.finalPlacement, step.lessonsToMarkCompleted);
+    } else if (step.nextTestCourseTitle) {
+      const nextCourse = courses.find(c => c.title === step.nextTestCourseTitle);
+      console.log("Found Next Course for Test:", nextCourse?.title);
+      if (nextCourse) {
+        const generatedTest = generateQuizFromLessons(nextCourse);
+        console.log("Generated test is truthy:", !!generatedTest, generatedTest?.title);
+        setActiveTest(generatedTest);
+        setPlacementTestCourse(nextCourse);
+      } else {
+        console.log("Fallback hitting Beginner because course not found");
+        // Fallback if course not found
+        handleFinalPlacement(LEVELS.BEGINNER, 0);
+      }
+    }
+  };
+
+  const handleContinueToDashboard = async () => {
+    console.log("handleContinueToDashboard TRACE:");
+    console.log(" - placementRec:", placementRec);
+    console.log(" - courses:", courses.map(c => c.title));
+    setIsPlacementMode(true);
+    setAssessmentState("completed"); // Must exit 'result' state to show dashboard & overlays
+    const step = getNextPlacementStep(placementRec, null, false);
+    console.log(" - step:", step);
+    await executePlacementStep(step);
+  };
+
+  const handleFinalPlacement = async (finalLevelTitle, numCoursesToComplete) => {
+    const completedLessonIds = [];
+    
+    // Mark requested courses as complete protecting against duplicates
+    for (let i = 0; i < Math.min(numCoursesToComplete, courses.length); i++) {
+      const course = courses[i];
+      if (course.lessons) {
+        course.lessons.forEach(l => {
+          if (!userProfile.completedLessons.includes(l._id)) {
+            completedLessonIds.push(l._id);
+          }
+        });
+      }
+    }
+
+    const updates = { 
+      level: finalLevelTitle, 
+      assessmentCompleted: true 
+    };
+    
+    if (completedLessonIds.length > 0) {
+      updates.completedLessons = [...userProfile.completedLessons, ...completedLessonIds];
+    }
+
+    updateUser(updates);
+    setAssessmentState("completed");
+    setIsPlacementMode(false);
+    setActiveTest(null);
+
+    // Persist finalized state to backend with retry logic
+    const saveToBackend = async (retries = 1) => {
+      try {
+        const token = localStorage.getItem('signbridge_token');
+        if (!token) {
+          console.error("No token found. Cannot save placement.");
+          return;
+        }
+
+        const backendLevel = finalLevelTitle === 'Daily Conversations (Advanced)' ? 'Daily Conversations (Advance)' : finalLevelTitle;
+
+        const res = await fetch(`${API_URL}/api/learning/me/assessment-complete`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
-          }
+          },
+          body: JSON.stringify({ finalCourseLevel: backendLevel, completedLessonIds })
         });
+        
+        if (!res.ok) throw new Error("API request failed");
+      } catch (err) {
+        if (retries > 0) {
+          console.log(`Retrying save final placement. Retries left: ${retries}`);
+          await saveToBackend(retries - 1);
+        } else {
+          console.error('Failed to save final placement after retries:', err);
+        }
       }
-    } catch (err) {
-      console.error('Failed to save assessment completion:', err);
-    }
+    };
+    
+    await saveToBackend();
   };
 
-  const handleContinueToDashboard = () => {
-    updateUser({ assessmentCompleted: true });
-    setAssessmentState("completed");
+  const handlePlacementTestPass = async (testId, score) => {
+    const step = getNextPlacementStep(placementRec, placementTestCourse?.title, true);
+    await executePlacementStep(step);
+  };
+
+  const handlePlacementTestFail = async (testId, score) => {
+    const step = getNextPlacementStep(placementRec, placementTestCourse?.title, false);
+    await executePlacementStep(step);
   };
 
   const handleLessonComplete = async (lessonId) => {
@@ -187,24 +245,29 @@ const LearnISL = () => {
     setSelectedLesson(null);
   };
 
-  const buildCumulativeTest = (targetCourse) => {
-    if (!targetCourse || !targetCourse.finalTest || !targetCourse.finalTest.questions)
-      return targetCourse;
-
-    // Just return the course with finalTest as quiz for ModuleTest compatibility
-    return {
-      ...targetCourse,
-      quiz: targetCourse.finalTest,
-    };
+  // --- Dynamic Quiz Generator ---
+  const shuffleArray = (arr) => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
   };
+
+  // generateQuizFromLessons has been moved to utils/placementLogic.js
 
   const handleStartTest = () => {
     const course = completedCoursePopup;
     setCompletedCoursePopup(null);
-    setActiveTest(buildCumulativeTest(course));
+    setActiveTest(generateQuizFromLessons(course));
   };
 
   const handleTestPass = async (testId, score) => {
+    if (isPlacementMode) {
+      handlePlacementTestPass(testId, score);
+      return;
+    }
     setActiveTest(null);
     const newXp = userProfile.xp + 200;
     updateUser({ xp: newXp });
@@ -212,6 +275,10 @@ const LearnISL = () => {
   };
 
   const handleTestFail = (testId, score) => {
+    if (isPlacementMode) {
+      handlePlacementTestFail(testId, score);
+      return;
+    }
     setActiveTest(null);
   };
 
@@ -232,9 +299,10 @@ const LearnISL = () => {
   }
 
   if (assessmentState === "result") {
+    // Show recommendation before triggering tests
     return (
       <AssessmentResult
-        result={userProfile}
+        result={{ level: placementRec }} 
         onContinue={handleContinueToDashboard}
       />
     );
@@ -270,7 +338,7 @@ const LearnISL = () => {
             </p>
 
             <div className="space-y-3">
-              {completedCoursePopup.finalTest && (
+              {completedCoursePopup.lessons && completedCoursePopup.lessons.length >= 3 && (
                 <button
                   onClick={handleStartTest}
                   className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-brand-600/30 transition-all hover:-translate-y-1 active:translate-y-0"
@@ -325,7 +393,7 @@ const LearnISL = () => {
             curriculum={courses}
             userProgress={userProfile}
             onLessonSelect={(lesson) => setSelectedLesson(lesson)}
-            onTestSelect={(course) => setActiveTest(buildCumulativeTest(course))}
+            onTestSelect={(course) => setActiveTest(generateQuizFromLessons(course))}
           />
         )}
       </div>

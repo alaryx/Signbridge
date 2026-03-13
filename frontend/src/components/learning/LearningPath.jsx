@@ -127,7 +127,7 @@ const LearningPath = ({ curriculum, userProgress, onLessonSelect, onTestSelect }
                         const lessonCount = course.lessons ? course.lessons.length : 0;
                         if (lessonCount === 0) return <div className="text-gray-400 py-8">No lessons yet</div>;
 
-                        const hasTest = !!course.finalTest;
+                        const hasTest = course.lessons && course.lessons.filter(l => l.mediaUrl).length >= 3;
                         const totalNodes = hasTest ? lessonCount + 1 : lessonCount;
                         const pathSegments = totalNodes > 0 ? totalNodes - 1 : 0;
 

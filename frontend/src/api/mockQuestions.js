@@ -37,9 +37,9 @@ export const assessmentQuestions = {
         type: "single_choice",
         question: "Are you familiar with any sign languages?",
         options: [
-            { text: "Yes, I know a little ISL", nextId: "Q4" },
-            { text: "Yes, I know ASL or BSL", nextId: "Q4" },
-            { text: "No, I am completely new", nextId: "Q4" }
+            { text: "No, I haven't learnt ISL", nextId: "Q4", placementLevel: "Daily Conversations (Beginner)" },
+            { text: "I have learnt a little ISL", nextId: "Q4", placementLevel: "Daily Conversations (Intermediate)" },
+            { text: "I have learnt ISL properly", nextId: "Q4", placementLevel: "Daily Conversations (Advance)" }
         ]
     },
     Q4: {
@@ -55,7 +55,8 @@ export const assessmentQuestions = {
     }
 };
 
-// Helper function to map generic placements - Always returns Level 1 for the new flow
-export const generateFinalPlacement = () => {
-    return 'Level 1';
+// Helper function to map generic placements
+export const generateFinalPlacement = (answers) => {
+    const q3Answer = answers.find(a => a.qId === 'Q3');
+    return q3Answer?.selected?.placementLevel || 'Daily Conversations (Beginner)';
 };

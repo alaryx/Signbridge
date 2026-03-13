@@ -13,10 +13,13 @@ const AssessmentResult = ({ result, onContinue }) => {
                     Assessment Complete!
                 </h2>
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-lg mx-auto">
-                    <p className="text-xl text-gray-800 leading-relaxed font-medium">
-                        We have analyzed your answers and formulated a course for you to learn from the basics.
+                <div className="bg-white p-8 rounded-3xl shadow-xl shadow-brand-500/10 border border-gray-100 max-w-lg mx-auto transform transition-all hover:scale-[1.02]">
+                    <p className="text-lg text-gray-500 leading-relaxed font-semibold uppercase tracking-wider mb-2">
+                        Your Recommended Start:
                     </p>
+                    <div className="text-3xl font-black text-brand-600 leading-tight">
+                        {result.level}
+                    </div>
                 </div>
             </div>
 
