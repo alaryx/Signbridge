@@ -141,7 +141,7 @@ const Translation = () => {
                   Recognized Text
                 </h2>
                 <p className="text-xs text-gray-400">
-                  Signs detected by the camera will appear here as text
+                  Currentlt  only these Signs can  be detected  - GOOD, HAPPY, HELLO, HELP, INDIA, LOVE, NAMASTE, SORRY, THANK_YOU, WHAT
                 </p>
               </div>
               <ConversationStream
