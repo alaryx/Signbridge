@@ -53,7 +53,7 @@ const About = () => {
                 </section>
 
                 {/* Features Split */}
-                <section className="grid md:grid-cols-2 gap-8 items-center">
+                <section>
                     <div className="bg-white rounded-2xl p-8 shadow-sm border border-blue-50 space-y-6">
                         <h2 className="text-2xl font-bold" style={{ color: '#1E3A5F' }}>Why SignBridge?</h2>
                         <ul className="space-y-5">
