@@ -13,7 +13,6 @@ const Profile = () => {
         );
     }
 
-    const level = user.level || 'Level 1';
     const xp = user.xp || 0;
     const streak = user.streak || 0;
     const completedLessons = user.completedLessons?.length || 0;
@@ -38,10 +37,11 @@ const Profile = () => {
 
                 {/* Left Column: User Card */}
                 <div className="w-full md:w-1/3">
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
+                    {/* NO overflow-hidden — allows avatar to straddle the banner edge */}
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 sticky top-24">
 
                         {/* Banner */}
-                        <div className="bg-gradient-to-r from-brand-500 to-emerald-400 h-24 relative flex-shrink-0">
+                        <div className="bg-gradient-to-r from-brand-500 to-emerald-400 h-28 rounded-t-3xl relative">
                             {user.role === 'admin' && (
                                 <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1 border border-white/20">
                                     <Settings size={14} /> Admin
@@ -49,18 +49,17 @@ const Profile = () => {
                             )}
                         </div>
 
-                        {/* Avatar + Info — flows naturally, no absolute positioning */}
+                        {/* Avatar + Info */}
                         <div className="px-6 pb-8 text-center">
-                            {/* Avatar sits right below banner with negative margin to overlap banner edge only */}
+                            {/* -mt-12 pulls avatar up so half sits above the banner bottom */}
                             <div className="flex justify-center -mt-12 mb-4">
-                                <div className="w-24 h-24 bg-white rounded-full p-2 shadow-lg">
+                                <div className="w-24 h-24 bg-white rounded-full p-2 shadow-lg ring-4 ring-white">
                                     <div className="w-full h-full bg-brand-100 rounded-full flex items-center justify-center text-brand-600">
                                         <User size={40} />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Name & email — completely below avatar, no overlap possible */}
                             <h1 className="text-2xl font-black text-gray-900">{user.name}</h1>
                             <div className="flex items-center justify-center gap-2 text-gray-500 mt-1">
                                 <Mail size={16} />
@@ -71,18 +70,8 @@ const Profile = () => {
                                 <span>Joined {joinedDate}</span>
                             </div>
 
-                            {/* Learning Rank */}
-                            <div className="mt-6 pt-6 border-t border-gray-100">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-500 font-medium text-sm">Learning Rank</span>
-                                    <span className="bg-brand-50 text-brand-700 px-3 py-1 rounded-full text-sm font-bold border border-brand-100">
-                                        {level}
-                                    </span>
-                                </div>
-                            </div>
-
                             {/* Reset Progress */}
-                            <div className="mt-6 pt-6 border-t border-gray-100">
+                            <div className="mt-8 pt-6 border-t border-gray-100">
                                 <button
                                     onClick={handleResetProgress}
                                     className="w-full flex items-center justify-center gap-2 text-red-600 bg-red-50 hover:bg-red-100 py-3 px-4 rounded-xl font-bold transition-colors border border-red-100"
