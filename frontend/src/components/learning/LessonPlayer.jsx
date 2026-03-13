@@ -18,6 +18,7 @@ const LessonPlayer = ({ lesson, onBack, onComplete }) => {
     const [mlStatus, setMlStatus] = useState('checking'); // 'checking' | 'ready' | 'offline'
     const [detectionResult, setDetectionResult] = useState(null); // { passed, detectedSign, confidence, allDetections }
     const [scanError, setScanError] = useState(null);
+    const [videoError, setVideoError] = useState(false);
 
     // ── ML health check ───────────────────────────────────────────────────────
     useEffect(() => {
@@ -184,7 +185,7 @@ const LessonPlayer = ({ lesson, onBack, onComplete }) => {
                     className="group flex items-center gap-2 text-gray-500 hover:text-teal-600 font-bold transition-all px-4 py-2 rounded-xl hover:bg-teal-50 w-fit -ml-4"
                 >
                     <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-                    Back to Module
+                    Back to Course
                 </button>
 
                 <div className="flex items-center gap-3">
@@ -218,9 +219,22 @@ const LessonPlayer = ({ lesson, onBack, onComplete }) => {
 
                 {/* Left: Video + Description */}
                 <div className="lg:col-span-7 space-y-8">
-                    <div className="bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-white/10 relative group">
-                        {lesson.mediaType === 'video' || lesson.mediaUrl?.includes('.mp4') ? (
+                    <div className="bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl ring-1 ring-white/10 relative group min-h-[300px] flex items-center justify-center">
+                        {videoError ? (
+                            <div className="flex flex-col items-center justify-center p-8 text-center text-gray-400 bg-gray-800 w-full h-full aspect-video">
+                                <AlertCircle size={48} className="text-red-400 mb-4" />
+                                <h3 className="text-xl font-bold text-white mb-2">Video failed to load</h3>
+                                <p className="text-sm text-gray-400 mb-6">There was a problem fetching this reference video.</p>
+                                <button
+                                    onClick={() => { setVideoError(false); }}
+                                    className="px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all"
+                                >
+                                    <RefreshCw size={18} className="inline mr-2" /> Retry
+                                </button>
+                            </div>
+                        ) : lesson.mediaType === 'video' || lesson.mediaUrl?.includes('.mp4') ? (
                             <video
+                                key={lesson.mediaUrl}
                                 src={lesson.mediaUrl}
                                 controls
                                 autoPlay
@@ -228,12 +242,14 @@ const LessonPlayer = ({ lesson, onBack, onComplete }) => {
                                 muted
                                 className="w-full aspect-video object-contain"
                                 crossOrigin="anonymous"
+                                onError={() => setVideoError(true)}
                             />
                         ) : (
                             <img
                                 src={lesson.mediaUrl}
                                 alt={lesson.title}
                                 className="w-full aspect-video object-contain"
+                                onError={() => setVideoError(true)}
                             />
                         )}
                         <div className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/20 text-white text-xs font-bold uppercase tracking-widest pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">

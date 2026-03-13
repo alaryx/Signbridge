@@ -39,7 +39,7 @@ exports.translate = async (req, res) => {
           sequence.push({
             type: 'sign',
             word: cleanWord,
-            videoUrl: signWord.videoUrl
+            videoUrl: signWord.videoUrl.replace('http://', 'https://')
           });
         } else {
           // 2. Fallback to fingerspelling character by character
@@ -52,7 +52,7 @@ exports.translate = async (req, res) => {
               sequence.push({
                 type: 'fingerspell',
                 character: char,
-                videoUrl: signChar.videoUrl
+                videoUrl: signChar.videoUrl.replace('http://', 'https://')
               });
             }
           }

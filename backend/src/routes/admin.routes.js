@@ -13,11 +13,6 @@ router.post('/courses', createCourse);
 router.put('/courses/:id', updateCourse);
 router.delete('/courses/:id', deleteCourse);
 
-// Module Management
-router.post('/modules', createModule);
-router.put('/modules/:id', updateModule);
-router.delete('/modules/:id', deleteModule);
-
 // Lesson Management
 // Handle multipart form data 'file' field for lesson uploads
 router.post('/lessons', upload.single('file'), uploadLesson);

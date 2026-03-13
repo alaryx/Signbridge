@@ -13,15 +13,11 @@ const AssessmentResult = ({ result, onContinue }) => {
                     Assessment Complete!
                 </h2>
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <p className="text-gray-600 mb-2">Based on your responses, we've assigned you to:</p>
-                    <p className="text-2xl font-bold text-gray-900">{result?.level || 'Beginner'} Level</p>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 max-w-lg mx-auto">
+                    <p className="text-xl text-gray-800 leading-relaxed font-medium">
+                        We have analyzed your answers and formulated a course for you to learn from the basics.
+                    </p>
                 </div>
-
-                <p className="text-gray-600">
-                    We've customized your learning path to focus on what matters most to you.
-                    Let's get started with your first lesson.
-                </p>
             </div>
 
             <button

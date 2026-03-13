@@ -45,8 +45,12 @@ const Auth = () => {
         return;
       }
 
-      login(data.user);
-      navigate("/learn");
+      if (data.status === 'success' && data.token) {
+        login(data.user, data.token);
+        navigate("/learn");
+      } else {
+        setError("Invalid response format from server.");
+      }
     } catch (err) {
       setError("Could not connect to the server. Please try again.");
     } finally {

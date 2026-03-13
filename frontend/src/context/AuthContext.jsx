@@ -1,37 +1,67 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL;
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        // Check local storage for existing session on mount
-        const storedUser = localStorage.getItem('signbridge_user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
+    // Fetch the latest user profile + progress from the backend
+    const refreshUser = useCallback(async () => {
+        const token = localStorage.getItem('signbridge_token');
+        if (!token) return;
+
+        try {
+            const res = await fetch(`${API_URL}/api/learning/me/progress`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const json = await res.json();
+                if (json.status === 'success') {
+                    const freshUser = json.data;
+                    setUser(freshUser);
+                    localStorage.setItem('signbridge_user', JSON.stringify(freshUser));
+                }
+            } else if (res.status === 401) {
+                // Token expired or invalid – log the user out
+                setUser(null);
+                localStorage.removeItem('signbridge_user');
+                localStorage.removeItem('signbridge_token');
+            }
+        } catch (err) {
+            console.error('Failed to refresh user from server:', err);
         }
-        setLoading(false);
     }, []);
 
-    const login = (userData) => {
-        // In a real app, this would be an API call
-        const isAdmin = userData.email?.toLowerCase().includes('admin');
-        const mockUser = {
-            id: userData.email || '1',
-            name: userData.name || (isAdmin ? 'Admin User' : 'Student'),
-            email: userData.email,
-            role: isAdmin ? 'admin' : 'student',
-            ...userData
-        };
-        setUser(mockUser);
-        localStorage.setItem('signbridge_user', JSON.stringify(mockUser));
+    useEffect(() => {
+        const storedUser = localStorage.getItem('signbridge_user');
+        const storedToken = localStorage.getItem('signbridge_token');
+
+        if (storedUser && storedToken) {
+            // Set immediately from cache for fast paint, then refresh from server
+            setUser(JSON.parse(storedUser));
+            setLoading(false);
+            refreshUser();
+        } else {
+            localStorage.removeItem('signbridge_user');
+            localStorage.removeItem('signbridge_token');
+            setLoading(false);
+        }
+    }, [refreshUser]);
+
+    const login = (userData, token) => {
+        setUser(userData);
+        localStorage.setItem('signbridge_user', JSON.stringify(userData));
+        if (token) {
+            localStorage.setItem('signbridge_token', token);
+        }
     };
 
     const logout = () => {
         setUser(null);
         localStorage.removeItem('signbridge_user');
+        localStorage.removeItem('signbridge_token');
     };
 
     const updateUser = (data) => {
@@ -42,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, updateUser, isAuthenticated: !!user, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, updateUser, refreshUser, isAuthenticated: !!user, loading }}>
             {children}
         </AuthContext.Provider>
     );

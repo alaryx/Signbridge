@@ -122,105 +122,71 @@ const LearningPath = ({ curriculum, userProgress, onLessonSelect, onTestSelect }
                         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
                     </div>
 
-                    {/* Modules & Lessons */}
-                    {course.modules.map((mod, mIdx) => {
-                        const hasTest = !!mod.quiz;
-                        const lessonCount = mod.lessons.length;
-                        // Determine how many nodes we have total in this module block
+                    {/* Lessons */}
+                    {(() => {
+                        const lessonCount = course.lessons ? course.lessons.length : 0;
+                        if (lessonCount === 0) return <div className="text-gray-400 py-8">No lessons yet</div>;
+
+                        const hasTest = !!course.finalTest;
                         const totalNodes = hasTest ? lessonCount + 1 : lessonCount;
-                        const pathSegments = totalNodes - 1; // Connectors are N-1
+                        const pathSegments = totalNodes > 0 ? totalNodes - 1 : 0;
 
                         const svgHeight = pathSegments * nodeSpacing;
                         const pathData = generatePathData(pathSegments);
 
-                        // Determine how many lessons in THIS module are completed
-                        let moduleCompletedCount = 0;
+                        let courseCompletedCount = 0;
                         let hasActive = false;
 
-                        mod.lessons.forEach((l) => {
+                        course.lessons.forEach((l) => {
                             if (completedIds.includes(l._id)) {
-                                moduleCompletedCount++;
+                                courseCompletedCount++;
                             } else if (!isFirstLockedFound) {
                                 hasActive = true;
                             }
                         });
 
-                        // For the Test Slab:
-                        // Module is "finished" if all lessons are complete
-                        const allLessonsComplete = moduleCompletedCount === lessonCount;
-
-                        // If all lessons are complete, but no test has been taken? We treat the test slab as active/completed.
-                        // We'll increment the completed node count conceptually to render the colored path down to the test slab.
-                        let nodesToConnectColored = moduleCompletedCount;
+                        const allLessonsComplete = courseCompletedCount === lessonCount;
+                        let nodesToConnectColored = courseCompletedCount;
 
                         if (allLessonsComplete && hasTest) {
-                            nodesToConnectColored = lessonCount; // Color the path all the way from the last lesson down to the test slab
-                        } else if (!hasActive && moduleCompletedCount > 0) {
-                            nodesToConnectColored = moduleCompletedCount - 1;
+                            nodesToConnectColored = lessonCount;
+                        } else if (!hasActive && courseCompletedCount > 0) {
+                            nodesToConnectColored = courseCompletedCount - 1;
                         }
 
-                        // Calculate active path length
                         let activePathData = '';
                         if (nodesToConnectColored > 0) {
                             activePathData = generatePathData(nodesToConnectColored);
                         }
 
                         return (
-                            <div key={mod._id} className="w-full flex flex-col items-center relative mb-8">
-
-                                {/* Module Name floating marker */}
-                                <div className="bg-white px-4 py-2 rounded-full border-2 border-gray-200 font-bold text-gray-600 text-sm mb-6 z-10 shadow-sm">
-                                    {mod.title}
-                                </div>
-
-                                {/* SVG Connecting Path container */}
+                            <div className="w-full flex flex-col items-center relative mb-8">
                                 <div className="relative flex flex-col items-center w-full pb-8">
-
-                                    {/* SVG Overlay */}
                                     {lessonCount > 1 && (
                                         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-0 pointer-events-none" style={{ height: svgHeight, width: '200px' }}>
                                             <svg width="200" height={svgHeight} viewBox={`0 0 200 ${svgHeight}`} className="drop-shadow-sm overflow-visible">
-                                                {/* Inactive grey path */}
-                                                <path
-                                                    d={pathData}
-                                                    fill="none"
-                                                    stroke="#E5E7EB"
-                                                    strokeWidth="12"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                />
-                                                {/* Active colored path */}
+                                                <path d={pathData} fill="none" stroke="#E5E7EB" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
                                                 {activePathData && (
-                                                    <path
-                                                        d={activePathData}
-                                                        fill="none"
-                                                        stroke="#14B8A6"
-                                                        strokeWidth="12"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        className="drop-shadow-[0_2px_8px_rgba(20,184,166,0.3)]"
-                                                    />
+                                                    <path d={activePathData} fill="none" stroke="#14B8A6" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_2px_8px_rgba(20,184,166,0.3)]" />
                                                 )}
                                             </svg>
                                         </div>
                                     )}
-                                    {mod.lessons.map((lesson, lIdx) => {
 
-                                        // Determine Status
+                                    {course.lessons.map((lesson, lIdx) => {
                                         let status = 'locked';
                                         const isCompleted = completedIds.includes(lesson._id);
 
                                         if (isCompleted) {
                                             status = 'completed';
                                         } else if (!isFirstLockedFound) {
-                                            // The very first uncompleted lesson is the 'active' one
                                             status = 'active';
                                             isFirstLockedFound = true;
                                         }
 
                                         return (
                                             <LevelNode
-                                                key={lesson._id}
+                                                key={lesson._id || `lesson-${lIdx}`}
                                                 lesson={lesson}
                                                 index={lIdx}
                                                 status={status}
@@ -229,35 +195,26 @@ const LearningPath = ({ curriculum, userProgress, onLessonSelect, onTestSelect }
                                         );
                                     })}
 
-                                    {/* Test Slab appended dynamically */}
+                                    {/* Test Slab */}
                                     {hasTest && (
                                         <div
                                             className="relative flex flex-col items-center justify-center my-6 group z-10"
-                                            style={{
-                                                transform: `translateX(${Math.sin(lessonCount * 0.5) * 60}px)`
-                                            }}
+                                            style={{ transform: `translateX(${Math.sin(lessonCount * 0.5) * 60}px)` }}
                                         >
                                             <button
-                                                onClick={() => allLessonsComplete && onTestSelect && onTestSelect(mod)}
-                                                className={`
-                                                    min-w-[200px] px-8 py-4 rounded-3xl flex items-center justify-center gap-3 font-black text-lg
-                                                    border-b-[6px] transition-all duration-200 relative
-                                                    ${allLessonsComplete
-                                                        ? 'bg-indigo-600 border-indigo-800 text-white hover:-translate-y-1 hover:border-b-[8px] active:translate-y-2 active:border-b-0 shadow-lg shadow-indigo-600/30'
-                                                        : 'bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed border-b-4'
-                                                    }
-                                                `}
+                                                onClick={() => allLessonsComplete && onTestSelect && onTestSelect(course)}
+                                                className={`min-w-[200px] px-8 py-4 rounded-3xl flex items-center justify-center gap-3 font-black text-lg border-b-[6px] transition-all duration-200 relative ${allLessonsComplete ? 'bg-indigo-600 border-indigo-800 text-white hover:-translate-y-1 hover:border-b-[8px] active:translate-y-2 active:border-b-0 shadow-lg shadow-indigo-600/30' : 'bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed border-b-4'}`}
                                             >
                                                 <Trophy size={24} className={allLessonsComplete ? "fill-white" : ""} />
-                                                <span>Test Module</span>
+                                                <span>Final Test</span>
                                             </button>
                                         </div>
                                     )}
                                 </div>
-
                             </div>
                         );
-                    })}
+                    })()}
+
 
                     {/* Section End Divider */}
                     <div className="w-16 h-1 bg-gray-200 rounded-full mt-8"></div>

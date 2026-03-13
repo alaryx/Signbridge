@@ -1,32 +1,19 @@
 const Course = require('../models/Course');
-const Module = require('../models/Module');
 const Lesson = require('../models/Lesson');
 
-// @desc    Get full curriculum (Courses -> Modules -> Lessons)
+// @desc    Get full curriculum (Courses -> Lessons)
 // @route   GET /api/learning/curriculum
 exports.getCurriculum = async (req, res) => {
     try {
         const courses = await Course.find().sort({ order: 1 }).lean();
-
-        // Fetch all modules and lessons to avoid N+1 queries
-        const allModules = await Module.find().sort({ order: 1 }).lean();
         const allLessons = await Lesson.find().sort({ order: 1 }).lean();
 
         // Build the nested structure
         const curriculum = courses.map(course => {
-            const courseModules = allModules
-                .filter(m => m.courseId.toString() === course._id.toString())
-                .map(module => {
-                    const moduleLessons = allLessons.filter(l => l.moduleId.toString() === module._id.toString());
-                    return {
-                        ...module,
-                        lessons: moduleLessons
-                    };
-                });
-
+            const courseLessons = allLessons.filter(l => l.courseId.toString() === course._id.toString());
             return {
                 ...course,
-                modules: courseModules
+                lessons: courseLessons
             };
         });
 
@@ -48,37 +35,59 @@ exports.getCourses = async (req, res) => {
     }
 };
 
-// @desc    Get modules for a specific course (for admin dropdown)
-// @route   GET /api/learning/courses/:courseId/modules
-exports.getModulesByCourse = async (req, res) => {
-    try {
-        const modules = await Module.find({ courseId: req.params.courseId }).sort({ order: 1 });
-        res.status(200).json({ status: 'success', data: modules });
-    } catch (error) {
-        res.status(500).json({ status: 'error', message: 'Failed to fetch modules' });
-    }
-};
+
 
 const User = require('../models/User');
 
-// @desc    Get user's progress and stats
-// @route   GET /api/learning/progress/:userId
-exports.getUserProgress = async (req, res) => {
+// @desc    Get currently logged-in user's progress and stats
+// @route   GET /api/learning/me/progress
+exports.getMyProgress = async (req, res) => {
     try {
-        const userId = req.params.userId;
-        const user = await User.findById(userId).select('-password');
+        const user = await User.findById(req.user._id).select('-password');
 
         if (!user) return res.status(404).json({ status: 'error', message: 'User not found' });
 
+        // Calculate dynamic level if curriculum exists
+        const courses = await Course.find().sort({ order: 1 });
+        let currentLevel = user.level;
+
+        if (courses.length > 0) {
+            const allLessons = await Lesson.find({});
+            const completedIds = user.completedLessons.map(id => id.toString());
+
+            // Find first course not fully completed
+            const currentCourse = courses.find(course => {
+                const courseLessons = allLessons.filter(l => l.courseId.toString() === course._id.toString());
+                return !courseLessons.every(l => completedIds.includes(l._id.toString()));
+            });
+
+            if (currentCourse) {
+                currentLevel = currentCourse.title;
+            } else {
+                currentLevel = courses[courses.length - 1].title; // All done, stay at last
+            }
+
+            // Sync database if changed
+            if (user.level !== currentLevel) {
+                user.level = currentLevel;
+                await user.save();
+            }
+        }
+
         res.status(200).json({
             status: 'success', data: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                level: user.level,
                 xp: user.xp,
                 streak: user.streak,
                 dailyGoal: user.dailyGoal,
                 dailyProgress: user.dailyProgress,
                 completedLessons: user.completedLessons,
-                completedModules: user.completedModules,
-                unlockedLessons: user.unlockedLessons
+                unlockedLessons: user.unlockedLessons,
+                assessmentCompleted: user.assessmentCompleted
             }
         });
     } catch (error) {
@@ -90,7 +99,8 @@ exports.getUserProgress = async (req, res) => {
 // @route   POST /api/learning/progress/lesson/:lessonId
 exports.completeLesson = async (req, res) => {
     try {
-        const { userId, xpEarned = 50, accuracy = 100 } = req.body;
+        const { xpEarned = 50, accuracy = 100 } = req.body;
+        const userId = req.user._id;
         const lessonId = req.params.lessonId;
 
         const user = await User.findById(userId);
@@ -159,5 +169,21 @@ exports.getPracticeHub = async (req, res) => {
         res.status(200).json({ status: 'success', data: user.weakSigns });
     } catch (error) {
         res.status(500).json({ status: 'error', message: 'Error fetching practice hub', error: error.message });
+    }
+};
+
+// @desc    Mark user's assessment as completed
+// @route   POST /api/learning/me/assessment-complete
+exports.completeAssessment = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ status: 'error', message: 'User not found' });
+
+        user.assessmentCompleted = true;
+        await user.save();
+
+        res.status(200).json({ status: 'success', message: 'Assessment marked as completed.' });
+    } catch (error) {
+        res.status(500).json({ status: 'error', message: 'Error completing assessment', error: error.message });
     }
 };

@@ -1,6 +1,5 @@
 const User = require('../models/User');
 const Course = require('../models/Course');
-const Module = require('../models/Module');
 const Lesson = require('../models/Lesson');
 const Query = require('../models/Query');
 const cloudinary = require('../config/cloudinary');
@@ -32,7 +31,7 @@ exports.getDashboardStats = async (req, res) => {
 // @route   POST /api/admin/lessons
 exports.uploadLesson = async (req, res) => {
     try {
-        const { title, description, type, duration, order, moduleId } = req.body;
+        const { title, description, type, duration, order, courseId } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded' });
@@ -60,7 +59,7 @@ exports.uploadLesson = async (req, res) => {
             mediaType: resourceType,
             duration: duration || '1 min',
             order: order || 0,
-            moduleId
+            courseId
         });
 
         res.status(201).json(lesson);
@@ -100,46 +99,38 @@ exports.updateCourse = async (req, res) => {
 // @route   DELETE /api/admin/courses/:id
 exports.deleteCourse = async (req, res) => {
     try {
-        await Course.findByIdAndDelete(req.params.id);
-        // Cascade delete modules and lessons optionally
-        res.status(200).json({ status: 'success', message: 'Course deleted' });
+        const courseId = req.params.id;
+        
+        // 1. Find all lessons associated with this course
+        const lessons = await Lesson.find({ courseId });
+        
+        // 2. Delete each lesson's media from Cloudinary
+        for (const lesson of lessons) {
+            if (lesson.mediaUrl) {
+                try {
+                    const urlParts = lesson.mediaUrl.split('/');
+                    const filename = urlParts[urlParts.length - 1];
+                    const publicId = `signbridge/learning_assets/${filename.split('.')[0]}`;
+                    await cloudinary.uploader.destroy(publicId, { resource_type: lesson.mediaType });
+                } catch (cloudinaryErr) {
+                    console.error(`Error deleting Cloudinary asset for lesson ${lesson._id}:`, cloudinaryErr.message);
+                }
+            }
+        }
+        
+        // 3. Delete lessons from DB
+        await Lesson.deleteMany({ courseId });
+        
+        // 4. Delete the course itself
+        await Course.findByIdAndDelete(courseId);
+        
+        res.status(200).json({ status: 'success', message: 'Course and associated lessons deleted' });
     } catch (error) {
         res.status(400).json({ message: 'Error deleting course', error: error.message });
     }
 };
 
-// @desc    Create a new module
-// @route   POST /api/admin/modules
-exports.createModule = async (req, res) => {
-    try {
-        const module = await Module.create(req.body);
-        res.status(201).json({ status: 'success', data: module });
-    } catch (error) {
-        res.status(400).json({ message: 'Error creating module', error: error.message });
-    }
-};
 
-// @desc    Update a module
-// @route   PUT /api/admin/modules/:id
-exports.updateModule = async (req, res) => {
-    try {
-        const module = await Module.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.status(200).json({ status: 'success', data: module });
-    } catch (error) {
-        res.status(400).json({ message: 'Error updating module', error: error.message });
-    }
-};
-
-// @desc    Delete a module
-// @route   DELETE /api/admin/modules/:id
-exports.deleteModule = async (req, res) => {
-    try {
-        await Module.findByIdAndDelete(req.params.id);
-        res.status(200).json({ status: 'success', message: 'Module deleted' });
-    } catch (error) {
-        res.status(400).json({ message: 'Error deleting module', error: error.message });
-    }
-};
 
 // @desc    Delete a lesson
 // @route   DELETE /api/admin/lessons/:id

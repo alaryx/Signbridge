@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const lessonSchema = new mongoose.Schema({
-    moduleId: {
+    courseId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Module',
+        ref: 'Course',
         required: true
     },
     title: {

@@ -113,6 +113,14 @@ export default function ModuleTest({ module, onPass, onFail, onCancel }) {
                     autoPlay
                     muted
                     loop
+                    onError={(e) => {
+                        e.target.parentElement.innerHTML = `
+                            <div class="flex flex-col items-center justify-center text-gray-500 p-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2 text-red-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                <p class="font-bold">Video Unavailable</p>
+                            </div>
+                        `;
+                    }}
                 />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
@@ -152,6 +160,14 @@ export default function ModuleTest({ module, onPass, onFail, onCancel }) {
                             loop
                             onMouseEnter={e => e.target.play()}
                             onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }}
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerHTML += `
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    </div>
+                                `;
+                            }}
                         />
                         {answers[currentQuestion.id] === opt.id && (
                             <div className="absolute top-2 right-2 bg-indigo-600 text-white rounded-full p-1 shadow-sm">

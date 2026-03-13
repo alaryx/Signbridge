@@ -27,7 +27,7 @@ const AssessmentFlow = ({ onComplete }) => {
             // Finish Assessment
             onComplete({
                 level: finalLevel,
-                path: ['Module 1: Greetings', 'Module 2: Food', 'Module 3: Basics'] // Mocked path
+                path: ['The Continuous Course']
             });
             return;
         }

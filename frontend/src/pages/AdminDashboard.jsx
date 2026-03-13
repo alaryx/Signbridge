@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("overview"); // overview, courses, modules, lessons
+  const [activeTab, setActiveTab] = useState("overview"); // overview, courses, lessons
 
   // Data States
   const [stats, setStats] = useState({
@@ -24,7 +24,6 @@ const AdminDashboard = () => {
   });
   const [queries, setQueries] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState([]); // if we fetch all lessons for the list
   const [loading, setLoading] = useState(true);
 
@@ -36,14 +35,8 @@ const AdminDashboard = () => {
     type: "teach",
     duration: "1 min",
     courseId: "",
-    moduleId: "",
   });
   const [newCourseName, setNewCourseName] = useState("");
-  const [newModuleData, setNewModuleData] = useState({
-    title: "",
-    order: 1,
-    courseId: "",
-  });
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -80,39 +73,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchModules = async (courseId) => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/learning/courses/${courseId}/modules`,
-      );
-      const data = await res.json();
-      if (data.status === "success") setModules(data.data);
-      return data.data;
-    } catch (error) {
-      console.error("Failed to fetch modules", error);
-      return [];
-    }
-  };
 
-  const fetchAllModules = async () => {
-    // Because the current API gets modules by course, we'll fetch them all by iterating courses
-    let allMods = [];
-    for (let c of courses) {
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/learning/courses/${c._id}/modules`,
-        );
-        const data = await res.json();
-        if (data.status === "success") {
-          allMods = [
-            ...allMods,
-            ...data.data.map((m) => ({ ...m, courseTitle: c.title })),
-          ];
-        }
-      } catch (e) {}
-    }
-    setModules(allMods);
-  };
 
   const fetchAllLessons = async () => {
     // We'll iterate through all courses and all modules to get a big flat list of lessons
@@ -125,13 +86,10 @@ const AdminDashboard = () => {
       const data = await res.json();
       if (data.status === "success") {
         data.data.forEach((course) => {
-          course.modules.forEach((mod) => {
-            mod.lessons.forEach((l) => {
-              allLessons.push({
-                ...l,
-                moduleTitle: mod.title,
-                courseTitle: course.title,
-              });
+          course.lessons.forEach((l) => {
+            allLessons.push({
+              ...l,
+              courseTitle: course.title,
             });
           });
         });
@@ -146,16 +104,13 @@ const AdminDashboard = () => {
   // React to tab changes to fetch required data
   useEffect(() => {
     if (activeTab === "courses") fetchCourses();
-    if (activeTab === "modules") fetchAllModules();
     if (activeTab === "lessons") fetchAllLessons();
   }, [activeTab]);
 
   // --- Handlers ---
   const handleCourseChangeForUpload = (e) => {
     const courseId = e.target.value;
-    setLessonData({ ...lessonData, courseId, moduleId: "" });
-    setModules([]);
-    if (courseId) fetchModules(courseId);
+    setLessonData({ ...lessonData, courseId });
   };
 
   const handleUpload = async (e) => {
@@ -171,7 +126,7 @@ const AdminDashboard = () => {
     formData.append("description", lessonData.description);
     formData.append("type", lessonData.type);
     formData.append("duration", lessonData.duration);
-    formData.append("moduleId", lessonData.moduleId);
+    formData.append("courseId", lessonData.courseId);
 
     try {
       const res = await fetch(
@@ -191,7 +146,6 @@ const AdminDashboard = () => {
           type: "teach",
           duration: "1 min",
           courseId: lessonData.courseId,
-          moduleId: lessonData.moduleId,
         });
         fetchOverviewData();
       } else {
@@ -248,43 +202,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const createModule = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/admin/modules`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: newModuleData.title,
-            courseId: newModuleData.courseId,
-            order: Number(newModuleData.order),
-          }),
-        },
-      );
-      if (res.ok) {
-        setNewModuleData({ title: "", order: 1, courseId: "" });
-        fetchAllModules();
-        alert("Module Created.");
-      }
-    } catch (error) {
-      alert("Error creating module.");
-    }
-  };
 
-  const deleteModule = async (id) => {
-    if (!window.confirm("Delete this Module?")) return;
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/admin/modules/${id}`,
-        { method: "DELETE" },
-      );
-      if (res.ok) fetchAllModules();
-    } catch (e) {
-      alert("Failed to delete.");
-    }
-  };
 
   const deleteLesson = async (id) => {
     if (
@@ -331,7 +249,7 @@ const AdminDashboard = () => {
 
       {/* Tabs */}
       <div className="flex space-x-2 bg-gray-50 p-1.5 rounded-xl border border-gray-200">
-        {["overview", "courses", "modules", "lessons"].map((tab) => (
+        {["overview", "courses", "lessons"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -461,29 +379,7 @@ const AdminDashboard = () => {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Select Module
-                  </label>
-                  <select
-                    required
-                    value={lessonData.moduleId}
-                    onChange={(e) =>
-                      setLessonData({ ...lessonData, moduleId: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white"
-                    disabled={!lessonData.courseId}
-                  >
-                    <option value="" disabled>
-                      -- Choose Module --
-                    </option>
-                    {modules.map((m) => (
-                      <option key={m._id} value={m._id}>
-                        {m.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -611,99 +507,6 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* TAB CONTENT: MODULES */}
-      {activeTab === "modules" && (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-in fade-in duration-300">
-          <div className="flex flex-col lg:flex-row justify-between lg:items-center mb-6 gap-4">
-            <h2 className="text-xl font-bold text-gray-900 border-l-4 border-purple-500 pl-3">
-              Manage Modules
-            </h2>
-            <form onSubmit={createModule} className="flex flex-wrap gap-2">
-              <select
-                value={newModuleData.courseId}
-                onChange={(e) =>
-                  setNewModuleData({
-                    ...newModuleData,
-                    courseId: e.target.value,
-                  })
-                }
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                required
-              >
-                <option value="" disabled>
-                  Select Parent Course
-                </option>
-                {courses.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={newModuleData.title}
-                onChange={(e) =>
-                  setNewModuleData({ ...newModuleData, title: e.target.value })
-                }
-                placeholder="Module Title"
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-48"
-                required
-              />
-              <input
-                type="number"
-                value={newModuleData.order}
-                onChange={(e) =>
-                  setNewModuleData({ ...newModuleData, order: e.target.value })
-                }
-                placeholder="Order"
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-20"
-                required
-                min="1"
-              />
-              <button
-                type="submit"
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-purple-700"
-              >
-                <Plus size={16} /> Add Module
-              </button>
-            </form>
-          </div>
-          <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">
-            {modules.length === 0 ? (
-              <p className="p-4 text-gray-500 text-sm">
-                No modules found or loading...
-              </p>
-            ) : (
-              modules.map((m) => (
-                <div
-                  key={m._id}
-                  className="flex items-center justify-between p-4 hover:bg-gray-50"
-                >
-                  <div>
-                    <span className="font-semibold text-gray-800">
-                      {m.title}
-                    </span>
-                    <p className="text-xs text-purple-600 font-medium mt-0.5">
-                      Parent Course: {m.courseTitle || m.courseId}
-                    </p>
-                  </div>
-                  <div className="flex gap-3 items-center">
-                    <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500 font-mono">
-                      Order: {m.order}
-                    </span>
-                    <button
-                      onClick={() => deleteModule(m._id)}
-                      className="text-red-500 hover:text-red-700 p-1"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
 
       {/* TAB CONTENT: LESSONS */}
       {activeTab === "lessons" && (
@@ -749,7 +552,7 @@ const AdminDashboard = () => {
                           {l.title}
                         </a>
                         <p className="text-xs text-gray-500 font-medium mt-0.5">
-                          {l.courseTitle} &rarr; {l.moduleTitle}{" "}
+                          {l.courseTitle}{" "}
                           <span className="ml-2 bg-gray-200 px-1 py-0.5 rounded uppercase">
                             {l.type}
                           </span>

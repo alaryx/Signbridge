@@ -5,6 +5,7 @@ const SignVideoPlayer = ({ sequence }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
     const [isFinished, setIsFinished] = useState(false);
+    const [hasError, setHasError] = useState(false);
     const videoRef = useRef(null);
 
     // Reset state when a new sequence arrives
@@ -13,6 +14,7 @@ const SignVideoPlayer = ({ sequence }) => {
             setCurrentIndex(0);
             setIsFinished(false);
             setIsPlaying(true);
+            setHasError(false);
         }
     }, [sequence]);
 
@@ -42,6 +44,7 @@ const SignVideoPlayer = ({ sequence }) => {
         setCurrentIndex(0);
         setIsFinished(false);
         setIsPlaying(true);
+        setHasError(false);
     };
 
     if (!sequence || sequence.length === 0) {
@@ -63,16 +66,37 @@ const SignVideoPlayer = ({ sequence }) => {
             {/* Video Player Container */}
             <div className="relative aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl ring-1 ring-gray-900/5">
 
-                <video
-                    ref={videoRef}
-                    key={videoUrl} // Force remount/reload on source change
-                    src={videoUrl}
-                    className="w-full h-full object-contain"
-                    onEnded={handleVideoEnded}
-                    autoPlay={isPlaying}
-                    playsInline
-                    preload="auto"
-                />
+                {hasError ? (
+                    <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center p-8 text-center text-gray-400">
+                        <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-4">
+                            <Play size={32} />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Video load failed</h3>
+                        <p className="text-sm mb-6 max-w-xs">There was an intermittent issue fetching this part of the sign sequence.</p>
+                        <button
+                            onClick={() => { setHasError(false); setIsPlaying(true); }}
+                            className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2 rounded-xl font-bold transition-transform active:scale-95"
+                        >
+                            Retry Segment
+                        </button>
+                    </div>
+                ) : (
+                    <video
+                        ref={videoRef}
+                        key={videoUrl} // Force remount/reload on source change
+                        src={videoUrl}
+                        className="w-full h-full object-contain"
+                        onEnded={handleVideoEnded}
+                        onError={() => {
+                            console.error("Video failed to load:", videoUrl);
+                            setHasError(true);
+                            setIsPlaying(false);
+                        }}
+                        autoPlay={isPlaying}
+                        playsInline
+                        preload="auto"
+                    />
+                )}
 
                 {/* Overlays */}
                 {!isPlaying && !isFinished && (

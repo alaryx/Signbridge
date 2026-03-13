@@ -13,6 +13,7 @@ const Profile = () => {
         );
     }
 
+    const level = user.level || 'Level 1';
     const xp = user.xp || 0;
     const streak = user.streak || 0;
     const completedLessons = user.completedLessons?.length || 0;
@@ -68,6 +69,15 @@ const Profile = () => {
                             <div className="flex items-center justify-center gap-2 text-gray-500 mt-2 text-sm">
                                 <Calendar size={16} />
                                 <span>Joined {joinedDate}</span>
+                            </div>
+
+                            <div className="mt-8 pt-6 border-t border-gray-100 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-500 font-medium text-sm">Learning Level</span>
+                                    <span className="bg-brand-50 text-brand-700 px-3 py-1 rounded-full text-sm font-bold border border-brand-100">
+                                        {level}
+                                    </span>
+                                </div>
                             </div>
 
                             {/* Reset Progress */}
