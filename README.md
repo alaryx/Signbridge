@@ -150,7 +150,7 @@ Built with ❤️ by a team of 5:
 | Name | GitHub |
 |------|--------|
 | **Samridhi Arora** | [@samridhiarora](https://github.com/samridhiarora) |
-| **Khushal Sharma** | [@khushalsharma](https://github.com/khushalsharma) |
+| **Khushal Sharma** | [@khushalsharma](https://github.com/khushal22042006) |
 | **Anzel Gupta** | [@anzelgupta](https://github.com/anzelgupta) |
 | **Himanshu Gautam** | [@himanshu-gautam](https://github.com/himanshu-gautam) |
 | **Aditya Kumar Singh** | [@adityakumarsingh](https://github.com/adityakumarsingh) |
