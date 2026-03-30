@@ -28,10 +28,11 @@ Whether you're a beginner looking to learn ISL or someone who needs quick sign-t
 - **Test Module:** Post-practice assessments to evaluate retention
 - **Progress Tracking:** Every practice session and test awards **XP points**, letting users track their growth over time
 
-### 🧠 ML Model (YOLOv8)
+### 🧠 ML Model 
 - Detects **10 ISL signs**: `GOOD`, `HAPPY`, `HELLO`, `HELP`, `INDIA`, `LOVE`, `NAMASTE`, `SORRY`, `THANK_YOU`, `WHAT`
 - Trained on **Google Colab T4 GPU**
-- Average **confidence: 70–80%** | Average **accuracy: 75–80%**
+- Average **confidence score: 70–80%**
+- More details will be added soon.
 
 ### 🔐 Auth & Access
 - Translation feature is publicly accessible
@@ -121,21 +122,6 @@ VITE_ML_SERVICE_URL=http://localhost:8000
 
 🔗 **Live App:** [signbridge-2.onrender.com](https://signbridge-2.onrender.com)
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Here's how to get started:
-
-1. **Fork** the repository
-2. **Create** a new branch: `git checkout -b feature/your-feature-name`
-3. **Commit** your changes: `git commit -m "Add: your feature description"`
-4. **Push** to your branch: `git push origin feature/your-feature-name`
-5. **Open** a Pull Request
-
-Please follow the existing code style and include relevant details in your PR description.
-
----
 
 ## 📄 License
 
@@ -143,20 +129,16 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ---
 
-## 👥 Team
-
-Built with ❤️ by a team of 5:
+## 👥 Our Team
 
 | Name | GitHub |
 |------|--------|
-| **Samridhi Arora** | [@samridhiarora](https://github.com/samridhiarora) |
+| **Samridhi Arora** | [@SamridhiArora](https://github.com/SamridhiArora) |
 | **Khushal Sharma** | [@khushalsharma](https://github.com/khushal22042006) |
 | **Anzel Gupta** | [@anzelgupta](https://github.com/anzelgupta) |
 | **Himanshu Gautam** | [@himanshu-gautam](https://github.com/himanshu-gautam) |
 | **Aditya Kumar Singh** | [@adityakumarsingh](https://github.com/adityakumarsingh) |
 
-> *Feel free to update the GitHub usernames with the correct ones!*
-
 ---
 
-> 🤟 *SignBridge — Making sign language accessible for everyone.*
+>  *SignBridge — Making sign language accessible for everyone.*
