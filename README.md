@@ -136,7 +136,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 | **Samridhi Arora** | [@SamridhiArora](https://github.com/SamridhiArora) |
 | **Khushal Sharma** | [@khushalsharma](https://github.com/khushal22042006) |
 | **Anzel Gupta** | [@anzelgupta](https://github.com/anzelgupta) |
-| **Himanshu Gautam** | [@himanshu-gautam](https://github.com/himanshu-gautam) |
+| **Himanshu Gautam** | [@himanshu-gautam](https://github.com/HgGautam14) |
 | **Aditya Kumar Singh** | [@adityakumarsingh](https://github.com/adityakumarsingh) |
 
 ---
